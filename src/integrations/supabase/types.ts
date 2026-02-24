@@ -14,7 +14,158 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      bank_accounts: {
+        Row: {
+          balance: number
+          created_at: string
+          id: string
+          name: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          balance?: number
+          created_at?: string
+          id?: string
+          name: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          balance?: number
+          created_at?: string
+          id?: string
+          name?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      bills: {
+        Row: {
+          amount: number
+          bank_account_id: string | null
+          category: string
+          created_at: string
+          current_installment: number | null
+          due_date: string
+          frequency: string | null
+          id: string
+          installment: boolean
+          installment_count: number | null
+          name: string
+          notes: string | null
+          paid: boolean
+          paid_date: string | null
+          payment_method: string
+          recurring: boolean
+          type: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          bank_account_id?: string | null
+          category: string
+          created_at?: string
+          current_installment?: number | null
+          due_date: string
+          frequency?: string | null
+          id?: string
+          installment?: boolean
+          installment_count?: number | null
+          name: string
+          notes?: string | null
+          paid?: boolean
+          paid_date?: string | null
+          payment_method?: string
+          recurring?: boolean
+          type?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          bank_account_id?: string | null
+          category?: string
+          created_at?: string
+          current_installment?: number | null
+          due_date?: string
+          frequency?: string | null
+          id?: string
+          installment?: boolean
+          installment_count?: number | null
+          name?: string
+          notes?: string | null
+          paid?: boolean
+          paid_date?: string | null
+          payment_method?: string
+          recurring?: boolean
+          type?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bills_bank_account_id_fkey"
+            columns: ["bank_account_id"]
+            isOneToOne: false
+            referencedRelation: "bank_accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      categories: {
+        Row: {
+          color: string
+          created_at: string
+          id: string
+          name: string
+          user_id: string
+        }
+        Insert: {
+          color?: string
+          created_at?: string
+          id?: string
+          name: string
+          user_id: string
+        }
+        Update: {
+          color?: string
+          created_at?: string
+          id?: string
+          name?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          display_name: string | null
+          id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          display_name?: string | null
+          id?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          display_name?: string | null
+          id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
