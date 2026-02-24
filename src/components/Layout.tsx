@@ -1,6 +1,7 @@
 import { NavLink, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Receipt, CalendarDays, BarChart3, Landmark, Menu, X } from 'lucide-react';
+import { LayoutDashboard, Receipt, CalendarDays, BarChart3, Landmark, Menu, X, LogOut } from 'lucide-react';
 import { useState } from 'react';
+import { useAuth } from '@/contexts/AuthContext';
 
 const links = [
   { to: '/', label: 'Dashboard', icon: LayoutDashboard },
@@ -13,6 +14,7 @@ const links = [
 export default function Layout({ children }: { children: React.ReactNode }) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const location = useLocation();
+  const { signOut, user } = useAuth();
 
   return (
     <div className="flex h-screen overflow-hidden">
@@ -40,6 +42,16 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             {l.label}
           </NavLink>
         ))}
+        <div className="mt-auto pt-4 border-t border-sidebar-border">
+          <p className="text-xs text-sidebar-foreground truncate px-3 mb-2">{user?.email}</p>
+          <button
+            onClick={signOut}
+            className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-sidebar-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground transition-colors w-full"
+          >
+            <LogOut size={18} />
+            Sair
+          </button>
+        </div>
       </aside>
 
       {/* Mobile header */}

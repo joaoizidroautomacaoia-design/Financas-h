@@ -1,10 +1,14 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { Bill, BankAccount, Category } from '@/types/finance';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
+import { toast } from 'sonner';
 
 interface FinanceContextType {
   bills: Bill[];
   bankAccounts: BankAccount[];
   categories: Category[];
+  loading: boolean;
   addBill: (bill: Omit<Bill, 'id'>) => void;
   updateBill: (bill: Bill) => void;
   deleteBill: (id: string) => void;
@@ -18,125 +22,209 @@ interface FinanceContextType {
 
 const FinanceContext = createContext<FinanceContextType | null>(null);
 
-const DEFAULT_CATEGORIES: Category[] = [
-  { id: '1', name: 'Moradia', color: 'hsl(217, 91%, 60%)' },
-  { id: '2', name: 'Alimentação', color: 'hsl(38, 92%, 50%)' },
-  { id: '3', name: 'Transporte', color: 'hsl(280, 65%, 60%)' },
-  { id: '4', name: 'Saúde', color: 'hsl(0, 72%, 51%)' },
-  { id: '5', name: 'Educação', color: 'hsl(160, 84%, 39%)' },
-  { id: '6', name: 'Lazer', color: 'hsl(330, 80%, 60%)' },
-  { id: '7', name: 'Serviços', color: 'hsl(200, 70%, 50%)' },
-  { id: '8', name: 'Outros', color: 'hsl(215, 20%, 55%)' },
+const DEFAULT_CATEGORIES: Omit<Category, 'id'>[] = [
+  { name: 'Moradia', color: 'hsl(217, 91%, 60%)' },
+  { name: 'Alimentação', color: 'hsl(38, 92%, 50%)' },
+  { name: 'Transporte', color: 'hsl(280, 65%, 60%)' },
+  { name: 'Saúde', color: 'hsl(0, 72%, 51%)' },
+  { name: 'Educação', color: 'hsl(160, 84%, 39%)' },
+  { name: 'Lazer', color: 'hsl(330, 80%, 60%)' },
+  { name: 'Serviços', color: 'hsl(200, 70%, 50%)' },
+  { name: 'Outros', color: 'hsl(215, 20%, 55%)' },
 ];
-
-const DEFAULT_BANK_ACCOUNTS: BankAccount[] = [
-  { id: '1', name: 'Nubank', balance: 5200 },
-  { id: '2', name: 'Itaú', balance: 3800 },
-];
-
-function generateSampleBills(): Bill[] {
-  const today = new Date();
-  const y = today.getFullYear();
-  const m = today.getMonth();
-  return [
-    { id: '1', name: 'Aluguel', category: 'Moradia', amount: 1800, dueDate: new Date(y, m, 5).toISOString(), paid: new Date(y, m, 5) < today, paidDate: new Date(y, m, 5) < today ? new Date(y, m, 4).toISOString() : undefined, recurring: true, frequency: 'monthly', installment: false, paymentMethod: 'Débito', bankAccountId: '2', type: 'fixed', notes: '' },
-    { id: '2', name: 'Internet', category: 'Serviços', amount: 119.90, dueDate: new Date(y, m, 10).toISOString(), paid: new Date(y, m, 10) < today, recurring: true, frequency: 'monthly', installment: false, paymentMethod: 'Débito', bankAccountId: '1', type: 'fixed', notes: '' },
-    { id: '3', name: 'Energia Elétrica', category: 'Moradia', amount: 245, dueDate: new Date(y, m, 15).toISOString(), paid: false, recurring: true, frequency: 'monthly', installment: false, paymentMethod: 'Boleto', bankAccountId: '1', type: 'variable', notes: '' },
-    { id: '4', name: 'Netflix', category: 'Lazer', amount: 55.90, dueDate: new Date(y, m, 8).toISOString(), paid: new Date(y, m, 8) < today, recurring: true, frequency: 'monthly', installment: false, paymentMethod: 'Cartão', bankAccountId: '1', type: 'subscription', notes: '' },
-    { id: '5', name: 'Supermercado', category: 'Alimentação', amount: 650, dueDate: new Date(y, m, 20).toISOString(), paid: false, recurring: false, installment: false, paymentMethod: 'Cartão', bankAccountId: '1', type: 'variable', notes: '' },
-    { id: '6', name: 'Plano de Saúde', category: 'Saúde', amount: 489, dueDate: new Date(y, m, 12).toISOString(), paid: new Date(y, m, 12) < today, recurring: true, frequency: 'monthly', installment: false, paymentMethod: 'Débito', bankAccountId: '2', type: 'fixed', notes: '' },
-    { id: '7', name: 'Curso Online', category: 'Educação', amount: 197, dueDate: new Date(y, m, 25).toISOString(), paid: false, recurring: false, installment: true, installmentCount: 6, currentInstallment: 3, paymentMethod: 'Cartão', bankAccountId: '1', type: 'card', notes: 'Parcela 3/6' },
-    { id: '8', name: 'Água', category: 'Moradia', amount: 85, dueDate: new Date(y, m, 18).toISOString(), paid: false, recurring: true, frequency: 'monthly', installment: false, paymentMethod: 'Boleto', bankAccountId: '2', type: 'variable', notes: '' },
-  ];
-}
-
-function uid() { return Math.random().toString(36).slice(2, 10); }
-
-function load<T>(key: string, fallback: T): T {
-  try {
-    const d = localStorage.getItem(key);
-    return d ? JSON.parse(d) : fallback;
-  } catch { return fallback; }
-}
 
 export function FinanceProvider({ children }: { children: React.ReactNode }) {
-  const [bills, setBills] = useState<Bill[]>(() => load('fin_bills', generateSampleBills()));
-  const [bankAccounts, setBankAccounts] = useState<BankAccount[]>(() => load('fin_accounts', DEFAULT_BANK_ACCOUNTS));
-  const [categories, setCategories] = useState<Category[]>(() => load('fin_categories', DEFAULT_CATEGORIES));
+  const { user } = useAuth();
+  const [bills, setBills] = useState<Bill[]>([]);
+  const [bankAccounts, setBankAccounts] = useState<BankAccount[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  useEffect(() => { localStorage.setItem('fin_bills', JSON.stringify(bills)); }, [bills]);
-  useEffect(() => { localStorage.setItem('fin_accounts', JSON.stringify(bankAccounts)); }, [bankAccounts]);
-  useEffect(() => { localStorage.setItem('fin_categories', JSON.stringify(categories)); }, [categories]);
+  // Fetch all data on user change
+  useEffect(() => {
+    if (!user) {
+      setBills([]);
+      setBankAccounts([]);
+      setCategories([]);
+      setLoading(false);
+      return;
+    }
+    fetchAll();
+  }, [user]);
 
-  const addBill = useCallback((bill: Omit<Bill, 'id'>) => {
-    const newBill = { ...bill, id: uid() };
-    setBills(prev => [...prev, newBill]);
+  const fetchAll = async () => {
+    setLoading(true);
+    const [billsRes, accountsRes, categoriesRes] = await Promise.all([
+      supabase.from('bills').select('*').order('due_date'),
+      supabase.from('bank_accounts').select('*').order('created_at'),
+      supabase.from('categories').select('*').order('created_at'),
+    ]);
 
-    // Generate recurring/installment copies
+    if (billsRes.data) setBills(billsRes.data.map(mapBillFromDb));
+    if (accountsRes.data) setBankAccounts(accountsRes.data.map(a => ({ id: a.id, name: a.name, balance: Number(a.balance) })));
+    if (categoriesRes.data) {
+      if (categoriesRes.data.length === 0) {
+        // Seed default categories for new user
+        await seedCategories();
+      } else {
+        setCategories(categoriesRes.data.map(c => ({ id: c.id, name: c.name, color: c.color })));
+      }
+    }
+    setLoading(false);
+  };
+
+  const seedCategories = async () => {
+    if (!user) return;
+    const rows = DEFAULT_CATEGORIES.map(c => ({ ...c, user_id: user.id }));
+    const { data } = await supabase.from('categories').insert(rows).select();
+    if (data) setCategories(data.map(c => ({ id: c.id, name: c.name, color: c.color })));
+  };
+
+  function mapBillFromDb(row: any): Bill {
+    return {
+      id: row.id,
+      name: row.name,
+      category: row.category,
+      amount: Number(row.amount),
+      dueDate: row.due_date,
+      paid: row.paid,
+      paidDate: row.paid_date || undefined,
+      recurring: row.recurring,
+      frequency: row.frequency || undefined,
+      installment: row.installment,
+      installmentCount: row.installment_count || undefined,
+      currentInstallment: row.current_installment || undefined,
+      paymentMethod: row.payment_method,
+      bankAccountId: row.bank_account_id || undefined,
+      type: row.type as Bill['type'],
+      notes: row.notes || '',
+    };
+  }
+
+  function billToDb(bill: Omit<Bill, 'id'> & { id?: string }) {
+    return {
+      name: bill.name,
+      category: bill.category,
+      amount: bill.amount,
+      due_date: bill.dueDate.split('T')[0],
+      paid: bill.paid,
+      paid_date: bill.paidDate ? bill.paidDate.split('T')[0] : null,
+      recurring: bill.recurring,
+      frequency: bill.frequency || null,
+      installment: bill.installment,
+      installment_count: bill.installmentCount || null,
+      current_installment: bill.currentInstallment || null,
+      payment_method: bill.paymentMethod,
+      bank_account_id: bill.bankAccountId || null,
+      type: bill.type,
+      notes: bill.notes || '',
+      user_id: user!.id,
+    };
+  }
+
+  const addBill = useCallback(async (bill: Omit<Bill, 'id'>) => {
+    if (!user) return;
+    const rows = [billToDb(bill)];
+
+    // Generate recurring copies
     if (bill.recurring && bill.frequency) {
-      const copies: Bill[] = [];
       const base = new Date(bill.dueDate);
       for (let i = 1; i <= 11; i++) {
         const d = new Date(base);
         if (bill.frequency === 'monthly') d.setMonth(d.getMonth() + i);
         else if (bill.frequency === 'weekly') d.setDate(d.getDate() + 7 * i);
         else d.setFullYear(d.getFullYear() + i);
-        copies.push({ ...bill, id: uid(), dueDate: d.toISOString(), paid: false });
+        rows.push(billToDb({ ...bill, dueDate: d.toISOString(), paid: false }));
       }
-      setBills(prev => [...prev, ...copies]);
     }
+    // Installments
     if (bill.installment && bill.installmentCount && bill.installmentCount > 1) {
-      const copies: Bill[] = [];
       const base = new Date(bill.dueDate);
       for (let i = 1; i < bill.installmentCount; i++) {
         const d = new Date(base);
         d.setMonth(d.getMonth() + i);
-        copies.push({ ...bill, id: uid(), dueDate: d.toISOString(), paid: false, currentInstallment: (bill.currentInstallment || 1) + i, notes: `Parcela ${(bill.currentInstallment || 1) + i}/${bill.installmentCount}` });
+        rows.push(billToDb({
+          ...bill,
+          dueDate: d.toISOString(),
+          paid: false,
+          currentInstallment: (bill.currentInstallment || 1) + i,
+          notes: `Parcela ${(bill.currentInstallment || 1) + i}/${bill.installmentCount}`,
+        }));
       }
-      setBills(prev => [...prev, ...copies]);
     }
-  }, []);
 
-  const updateBill = useCallback((bill: Bill) => {
+    const { data, error } = await supabase.from('bills').insert(rows).select();
+    if (error) { toast.error('Erro ao adicionar conta'); return; }
+    if (data) setBills(prev => [...prev, ...data.map(mapBillFromDb)]);
+  }, [user]);
+
+  const updateBill = useCallback(async (bill: Bill) => {
+    const { error } = await supabase.from('bills').update(billToDb(bill)).eq('id', bill.id);
+    if (error) { toast.error('Erro ao atualizar'); return; }
     setBills(prev => prev.map(b => b.id === bill.id ? bill : b));
-  }, []);
+  }, [user]);
 
-  const deleteBill = useCallback((id: string) => {
+  const deleteBill = useCallback(async (id: string) => {
+    const { error } = await supabase.from('bills').delete().eq('id', id);
+    if (error) { toast.error('Erro ao deletar'); return; }
     setBills(prev => prev.filter(b => b.id !== id));
   }, []);
 
-  const markAsPaid = useCallback((id: string) => {
-    setBills(prev => prev.map(b => {
-      if (b.id !== id) return b;
-      const updated = { ...b, paid: true, paidDate: new Date().toISOString() };
-      // Subtract from bank account
-      if (b.bankAccountId) {
-        setBankAccounts(accs => accs.map(a =>
-          a.id === b.bankAccountId ? { ...a, balance: a.balance - b.amount } : a
-        ));
-      }
-      return updated;
-    }));
-  }, []);
+  const markAsPaid = useCallback(async (id: string) => {
+    const bill = bills.find(b => b.id === id);
+    if (!bill) return;
 
-  const addBankAccount = useCallback((a: Omit<BankAccount, 'id'>) => {
-    setBankAccounts(prev => [...prev, { ...a, id: uid() }]);
-  }, []);
-  const updateBankAccount = useCallback((a: BankAccount) => {
+    const now = new Date().toISOString().split('T')[0];
+    const { error } = await supabase.from('bills').update({ paid: true, paid_date: now }).eq('id', id);
+    if (error) { toast.error('Erro ao marcar como pago'); return; }
+
+    // Update bank balance
+    if (bill.bankAccountId) {
+      const account = bankAccounts.find(a => a.id === bill.bankAccountId);
+      if (account) {
+        const newBalance = account.balance - bill.amount;
+        await supabase.from('bank_accounts').update({ balance: newBalance }).eq('id', account.id);
+        setBankAccounts(prev => prev.map(a => a.id === account.id ? { ...a, balance: newBalance } : a));
+      }
+    }
+
+    setBills(prev => prev.map(b => b.id === id ? { ...b, paid: true, paidDate: now } : b));
+  }, [bills, bankAccounts]);
+
+  const addBankAccount = useCallback(async (a: Omit<BankAccount, 'id'>) => {
+    if (!user) return;
+    const { data, error } = await supabase.from('bank_accounts').insert({ name: a.name, balance: a.balance, user_id: user.id }).select().single();
+    if (error) { toast.error('Erro ao adicionar conta bancária'); return; }
+    if (data) setBankAccounts(prev => [...prev, { id: data.id, name: data.name, balance: Number(data.balance) }]);
+  }, [user]);
+
+  const updateBankAccount = useCallback(async (a: BankAccount) => {
+    const { error } = await supabase.from('bank_accounts').update({ name: a.name, balance: a.balance }).eq('id', a.id);
+    if (error) { toast.error('Erro ao atualizar'); return; }
     setBankAccounts(prev => prev.map(x => x.id === a.id ? a : x));
   }, []);
-  const deleteBankAccount = useCallback((id: string) => {
+
+  const deleteBankAccount = useCallback(async (id: string) => {
+    const { error } = await supabase.from('bank_accounts').delete().eq('id', id);
+    if (error) { toast.error('Erro ao deletar'); return; }
     setBankAccounts(prev => prev.filter(x => x.id !== id));
   }, []);
-  const addCategory = useCallback((c: Omit<Category, 'id'>) => {
-    setCategories(prev => [...prev, { ...c, id: uid() }]);
-  }, []);
-  const deleteCategory = useCallback((id: string) => {
+
+  const addCategory = useCallback(async (c: Omit<Category, 'id'>) => {
+    if (!user) return;
+    const { data, error } = await supabase.from('categories').insert({ name: c.name, color: c.color, user_id: user.id }).select().single();
+    if (error) { toast.error('Erro ao adicionar categoria'); return; }
+    if (data) setCategories(prev => [...prev, { id: data.id, name: data.name, color: data.color }]);
+  }, [user]);
+
+  const deleteCategory = useCallback(async (id: string) => {
+    const { error } = await supabase.from('categories').delete().eq('id', id);
+    if (error) { toast.error('Erro ao deletar'); return; }
     setCategories(prev => prev.filter(x => x.id !== id));
   }, []);
 
   return (
-    <FinanceContext.Provider value={{ bills, bankAccounts, categories, addBill, updateBill, deleteBill, markAsPaid, addBankAccount, updateBankAccount, deleteBankAccount, addCategory, deleteCategory }}>
+    <FinanceContext.Provider value={{ bills, bankAccounts, categories, loading, addBill, updateBill, deleteBill, markAsPaid, addBankAccount, updateBankAccount, deleteBankAccount, addCategory, deleteCategory }}>
       {children}
     </FinanceContext.Provider>
   );
