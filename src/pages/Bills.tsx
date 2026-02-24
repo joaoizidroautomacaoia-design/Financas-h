@@ -86,7 +86,7 @@ export default function BillsPage() {
                   <span className="text-xs px-2 py-0.5 rounded-full bg-muted text-muted-foreground">{b.category}</span>
                 </div>
                 <div className="flex gap-3 mt-1 text-xs text-muted-foreground">
-                  <span>Vence: {format(new Date(b.dueDate), 'dd/MM/yyyy')}</span>
+                  <span>Vence: {format(new Date(b.dueDate + 'T12:00:00'), 'dd/MM/yyyy')}</span>
                   <span>{TYPE_LABELS[b.type]}</span>
                   {b.installment && <span>Parcela {b.currentInstallment}/{b.installmentCount}</span>}
                 </div>
