@@ -37,7 +37,7 @@ export function getBillStatus(bill: Bill): BillStatus {
   if (bill.paid) return 'paid';
   const today = new Date();
   today.setHours(0, 0, 0, 0);
-  const due = new Date(bill.dueDate);
+  const due = new Date(bill.dueDate + 'T12:00:00');
   due.setHours(0, 0, 0, 0);
   const diff = (due.getTime() - today.getTime()) / (1000 * 60 * 60 * 24);
   if (diff < 0) return 'overdue';
