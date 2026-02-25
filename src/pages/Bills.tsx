@@ -3,6 +3,7 @@ import { useFinance } from '@/contexts/FinanceContext';
 import { Bill, getBillStatus, STATUS_LABELS, TYPE_LABELS, BillStatus, BillType } from '@/types/finance';
 import { format } from 'date-fns';
 import { Plus, Trash2, Pencil, CheckCircle2, Filter } from 'lucide-react';
+import { parseDateOnly } from '@/lib/date';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import BillFormDialog from '@/components/BillFormDialog';
@@ -30,7 +31,7 @@ export default function BillsPage() {
     if (categoryFilter !== 'all' && b.category !== categoryFilter) return false;
     if (typeFilter !== 'all' && b.type !== typeFilter) return false;
     return true;
-  }).sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime());
+  }).sort((a, b) => parseDateOnly(a.dueDate).getTime() - parseDateOnly(b.dueDate).getTime());
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -86,7 +87,7 @@ export default function BillsPage() {
                   <span className="text-xs px-2 py-0.5 rounded-full bg-muted text-muted-foreground">{b.category}</span>
                 </div>
                 <div className="flex gap-3 mt-1 text-xs text-muted-foreground">
-                  <span>Vence: {format(new Date(b.dueDate + 'T12:00:00'), 'dd/MM/yyyy')}</span>
+                  <span>Vence: {format(parseDateOnly(b.dueDate), 'dd/MM/yyyy')}</span>
                   <span>{TYPE_LABELS[b.type]}</span>
                   {b.installment && <span>Parcela {b.currentInstallment}/{b.installmentCount}</span>}
                 </div>

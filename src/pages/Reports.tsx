@@ -3,6 +3,7 @@ import { useFinance } from '@/contexts/FinanceContext';
 import { isThisMonth, format, subMonths, startOfMonth, endOfMonth, isWithinInterval } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, LineChart, Line, CartesianGrid, Legend } from 'recharts';
+import { parseDateOnly } from '@/lib/date';
 
 const COLORS = ['hsl(160, 84%, 39%)', 'hsl(217, 91%, 60%)', 'hsl(38, 92%, 50%)', 'hsl(280, 65%, 60%)', 'hsl(0, 72%, 51%)', 'hsl(330, 80%, 60%)', 'hsl(200, 70%, 50%)', 'hsl(215, 20%, 55%)'];
 
@@ -11,14 +12,14 @@ export default function ReportsPage() {
   const formatCurrency = (v: number) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
   const byCategory = useMemo(() => {
-    const thisMonth = bills.filter(b => isThisMonth(new Date(b.dueDate)));
+    const thisMonth = bills.filter(b => isThisMonth(parseDateOnly(b.dueDate)));
     const map: Record<string, number> = {};
     thisMonth.forEach(b => { map[b.category] = (map[b.category] || 0) + b.amount; });
     return Object.entries(map).map(([name, value]) => ({ name, value })).sort((a, b) => b.value - a.value);
   }, [bills]);
 
   const paidVsPending = useMemo(() => {
-    const thisMonth = bills.filter(b => isThisMonth(new Date(b.dueDate)));
+    const thisMonth = bills.filter(b => isThisMonth(parseDateOnly(b.dueDate)));
     const paid = thisMonth.filter(b => b.paid).reduce((s, b) => s + b.amount, 0);
     const pending = thisMonth.filter(b => !b.paid).reduce((s, b) => s + b.amount, 0);
     return [
@@ -31,8 +32,8 @@ export default function ReportsPage() {
     const now = new Date();
     const lastMonthStart = startOfMonth(subMonths(now, 1));
     const lastMonthEnd = endOfMonth(subMonths(now, 1));
-    const thisMonthBills = bills.filter(b => isThisMonth(new Date(b.dueDate)));
-    const lastMonthBills = bills.filter(b => isWithinInterval(new Date(b.dueDate), { start: lastMonthStart, end: lastMonthEnd }));
+    const thisMonthBills = bills.filter(b => isThisMonth(parseDateOnly(b.dueDate)));
+    const lastMonthBills = bills.filter(b => isWithinInterval(parseDateOnly(b.dueDate), { start: lastMonthStart, end: lastMonthEnd }));
 
     const catSet = new Set([...thisMonthBills.map(b => b.category), ...lastMonthBills.map(b => b.category)]);
     return Array.from(catSet).map(cat => ({
@@ -48,7 +49,7 @@ export default function ReportsPage() {
       const m = subMonths(now, 5 - i);
       const s = startOfMonth(m);
       const e = endOfMonth(m);
-      const monthBills = bills.filter(b => isWithinInterval(new Date(b.dueDate), { start: s, end: e }));
+      const monthBills = bills.filter(b => isWithinInterval(parseDateOnly(b.dueDate), { start: s, end: e }));
       return {
         name: format(m, 'MMM', { locale: ptBR }),
         total: monthBills.reduce((sum, b) => sum + b.amount, 0),

@@ -4,6 +4,7 @@ import { getBillStatus, STATUS_LABELS, Bill } from '@/types/finance';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, getDay, isSameDay, addMonths, subMonths } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { ChevronLeft, ChevronRight, CheckCircle2 } from 'lucide-react';
+import { parseDateOnly } from '@/lib/date';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
@@ -34,7 +35,7 @@ export default function CalendarPage() {
   const billsByDate = useMemo(() => {
     const map: Record<string, Bill[]> = {};
     bills.forEach(b => {
-      const key = format(new Date(b.dueDate), 'yyyy-MM-dd');
+      const key = format(parseDateOnly(b.dueDate), 'yyyy-MM-dd');
       if (!map[key]) map[key] = [];
       map[key].push(b);
     });

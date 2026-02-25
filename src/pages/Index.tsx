@@ -4,13 +4,14 @@ import { AlertTriangle, CheckCircle2, Clock, TrendingUp, Wallet, Landmark } from
 import { useMemo } from 'react';
 import { format, isThisMonth, differenceInDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { parseDateOnly } from '@/lib/date';
 
 export default function Dashboard() {
   const { bills, bankAccounts } = useFinance();
 
   const stats = useMemo(() => {
     const today = new Date();
-    const monthBills = bills.filter(b => isThisMonth(new Date(b.dueDate)));
+    const monthBills = bills.filter(b => isThisMonth(parseDateOnly(b.dueDate)));
     const paidThisMonth = monthBills.filter(b => b.paid);
     const pendingThisMonth = monthBills.filter(b => !b.paid);
     const totalMonth = monthBills.reduce((s, b) => s + b.amount, 0);
@@ -89,7 +90,7 @@ export default function Dashboard() {
                 <div key={b.id} className="flex items-center justify-between py-2 px-3 rounded-lg status-overdue border text-sm">
                   <div>
                     <p className="font-medium">{b.name}</p>
-                    <p className="text-xs opacity-70">Venceu {format(new Date(b.dueDate), 'dd/MM')} · {Math.abs(differenceInDays(new Date(b.dueDate), new Date()))} dias atrás</p>
+                    <p className="text-xs opacity-70">Venceu {format(parseDateOnly(b.dueDate), 'dd/MM')} · {Math.abs(differenceInDays(parseDateOnly(b.dueDate), new Date()))} dias atrás</p>
                   </div>
                   <span className="font-semibold mono">{formatCurrency(b.amount)}</span>
                 </div>
@@ -109,13 +110,13 @@ export default function Dashboard() {
           ) : (
             <div className="space-y-2">
               {stats.dueSoon.map(b => {
-                const days = differenceInDays(new Date(b.dueDate), new Date());
+                const days = differenceInDays(parseDateOnly(b.dueDate), new Date());
                 return (
                   <div key={b.id} className="flex items-center justify-between py-2 px-3 rounded-lg status-due-soon border text-sm">
                     <div>
                       <p className="font-medium">{b.name}</p>
                       <p className="text-xs opacity-70">
-                        {days === 0 ? 'Vence hoje' : days === 1 ? 'Vence amanhã' : `Vence em ${days} dias`} · {format(new Date(b.dueDate), 'dd/MM')}
+                        {days === 0 ? 'Vence hoje' : days === 1 ? 'Vence amanhã' : `Vence em ${days} dias`} · {format(parseDateOnly(b.dueDate), 'dd/MM')}
                       </p>
                     </div>
                     <span className="font-semibold mono">{formatCurrency(b.amount)}</span>

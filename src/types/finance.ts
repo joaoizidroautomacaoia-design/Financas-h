@@ -1,3 +1,5 @@
+import { parseDateOnly } from '@/lib/date';
+
 export type BillStatus = 'paid' | 'pending' | 'overdue' | 'due-soon' | 'future';
 export type BillType = 'fixed' | 'variable' | 'card' | 'subscription';
 export type Frequency = 'monthly' | 'annual' | 'weekly';
@@ -37,7 +39,7 @@ export function getBillStatus(bill: Bill): BillStatus {
   if (bill.paid) return 'paid';
   const today = new Date();
   today.setHours(0, 0, 0, 0);
-  const due = new Date(bill.dueDate + 'T12:00:00');
+  const due = parseDateOnly(bill.dueDate);
   due.setHours(0, 0, 0, 0);
   const diff = (due.getTime() - today.getTime()) / (1000 * 60 * 60 * 24);
   if (diff < 0) return 'overdue';
