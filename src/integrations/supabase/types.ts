@@ -50,6 +50,7 @@ export type Database = {
           current_installment: number | null
           due_date: string
           frequency: string | null
+          group_id: string | null
           id: string
           installment: boolean
           installment_count: number | null
@@ -71,6 +72,7 @@ export type Database = {
           current_installment?: number | null
           due_date: string
           frequency?: string | null
+          group_id?: string | null
           id?: string
           installment?: boolean
           installment_count?: number | null
@@ -92,6 +94,7 @@ export type Database = {
           current_installment?: number | null
           due_date?: string
           frequency?: string | null
+          group_id?: string | null
           id?: string
           installment?: boolean
           installment_count?: number | null

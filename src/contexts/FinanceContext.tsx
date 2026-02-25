@@ -12,7 +12,9 @@ interface FinanceContextType {
   loading: boolean;
   addBill: (bill: Omit<Bill, 'id'>) => void;
   updateBill: (bill: Bill) => void;
+  updateBillGroup: (bill: Bill) => void;
   deleteBill: (id: string) => void;
+  deleteBillGroup: (groupId: string) => void;
   markAsPaid: (id: string) => void;
   addBankAccount: (account: Omit<BankAccount, 'id'>) => void;
   updateBankAccount: (account: BankAccount) => void;
@@ -41,7 +43,6 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Fetch all data on user change
   useEffect(() => {
     if (!user) {
       setBills([]);
@@ -65,7 +66,6 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
     if (accountsRes.data) setBankAccounts(accountsRes.data.map(a => ({ id: a.id, name: a.name, balance: Number(a.balance) })));
     if (categoriesRes.data) {
       if (categoriesRes.data.length === 0) {
-        // Seed default categories for new user
         await seedCategories();
       } else {
         setCategories(categoriesRes.data.map(c => ({ id: c.id, name: c.name, color: c.color })));
@@ -99,6 +99,7 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
       bankAccountId: row.bank_account_id || undefined,
       type: row.type as Bill['type'],
       notes: row.notes || '',
+      groupId: row.group_id || undefined,
     };
   }
 
@@ -120,14 +121,20 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
       type: bill.type,
       notes: bill.notes || '',
       user_id: user!.id,
+      group_id: bill.groupId || null,
     };
   }
 
   const addBill = useCallback(async (bill: Omit<Bill, 'id'>) => {
     if (!user) return;
-    const rows = [billToDb(bill)];
+    
+    // Generate a group_id for recurring/installment bills
+    const needsGroup = (bill.recurring && bill.frequency) || (bill.installment && bill.installmentCount && bill.installmentCount > 1);
+    const groupId = needsGroup ? crypto.randomUUID() : undefined;
+    const billWithGroup = { ...bill, groupId };
+    
+    const rows = [billToDb(billWithGroup)];
 
-    // Generate recurring copies
     if (bill.recurring && bill.frequency) {
       const base = parseDateOnly(bill.dueDate);
       for (let i = 1; i <= 11; i++) {
@@ -135,17 +142,17 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
         if (bill.frequency === 'monthly') d.setMonth(d.getMonth() + i);
         else if (bill.frequency === 'weekly') d.setDate(d.getDate() + 7 * i);
         else d.setFullYear(d.getFullYear() + i);
-        rows.push(billToDb({ ...bill, dueDate: formatDateOnly(d), paid: false }));
+        rows.push(billToDb({ ...billWithGroup, dueDate: formatDateOnly(d), paid: false }));
       }
     }
-    // Installments
+
     if (bill.installment && bill.installmentCount && bill.installmentCount > 1) {
       const base = parseDateOnly(bill.dueDate);
       for (let i = 1; i < bill.installmentCount; i++) {
         const d = new Date(base);
         d.setMonth(d.getMonth() + i);
         rows.push(billToDb({
-          ...bill,
+          ...billWithGroup,
           dueDate: formatDateOnly(d),
           paid: false,
           currentInstallment: (bill.currentInstallment || 1) + i,
@@ -165,32 +172,44 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
     setBills(prev => prev.map(b => b.id === bill.id ? bill : b));
   }, [user]);
 
+  const updateBillGroup = useCallback(async (bill: Bill) => {
+    if (!bill.groupId) {
+      // No group, just update single
+      return updateBill(bill);
+    }
+    const updateData = {
+      name: bill.name,
+      category: bill.category,
+      amount: bill.amount,
+      type: bill.type,
+      payment_method: bill.paymentMethod,
+      bank_account_id: bill.bankAccountId || null,
+      recurring: bill.recurring,
+      frequency: bill.frequency || null,
+    };
+    const { error } = await supabase.from('bills').update(updateData).eq('group_id', bill.groupId);
+    if (error) { toast.error('Erro ao atualizar grupo'); return; }
+    setBills(prev => prev.map(b => b.groupId === bill.groupId ? { ...b, ...bill, dueDate: b.dueDate, paid: b.paid, paidDate: b.paidDate, currentInstallment: b.currentInstallment, notes: b.notes, id: b.id } : b));
+  }, [user]);
+
   const deleteBill = useCallback(async (id: string) => {
     const { error } = await supabase.from('bills').delete().eq('id', id);
     if (error) { toast.error('Erro ao deletar'); return; }
     setBills(prev => prev.filter(b => b.id !== id));
   }, []);
 
-  const markAsPaid = useCallback(async (id: string) => {
-    const bill = bills.find(b => b.id === id);
-    if (!bill) return;
+  const deleteBillGroup = useCallback(async (groupId: string) => {
+    const { error } = await supabase.from('bills').delete().eq('group_id', groupId);
+    if (error) { toast.error('Erro ao deletar grupo'); return; }
+    setBills(prev => prev.filter(b => b.groupId !== groupId));
+  }, []);
 
+  const markAsPaid = useCallback(async (id: string) => {
     const now = todayDateOnly();
     const { error } = await supabase.from('bills').update({ paid: true, paid_date: now }).eq('id', id);
     if (error) { toast.error('Erro ao marcar como pago'); return; }
-
-    // Update bank balance
-    if (bill.bankAccountId) {
-      const account = bankAccounts.find(a => a.id === bill.bankAccountId);
-      if (account) {
-        const newBalance = account.balance - bill.amount;
-        await supabase.from('bank_accounts').update({ balance: newBalance }).eq('id', account.id);
-        setBankAccounts(prev => prev.map(a => a.id === account.id ? { ...a, balance: newBalance } : a));
-      }
-    }
-
     setBills(prev => prev.map(b => b.id === id ? { ...b, paid: true, paidDate: now } : b));
-  }, [bills, bankAccounts]);
+  }, []);
 
   const addBankAccount = useCallback(async (a: Omit<BankAccount, 'id'>) => {
     if (!user) return;
@@ -225,7 +244,7 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   return (
-    <FinanceContext.Provider value={{ bills, bankAccounts, categories, loading, addBill, updateBill, deleteBill, markAsPaid, addBankAccount, updateBankAccount, deleteBankAccount, addCategory, deleteCategory }}>
+    <FinanceContext.Provider value={{ bills, bankAccounts, categories, loading, addBill, updateBill, updateBillGroup, deleteBill, deleteBillGroup, markAsPaid, addBankAccount, updateBankAccount, deleteBankAccount, addCategory, deleteCategory }}>
       {children}
     </FinanceContext.Provider>
   );

@@ -21,6 +21,7 @@ export interface Bill {
   bankAccountId?: string;
   type: BillType;
   notes?: string;
+  groupId?: string;
 }
 
 export interface BankAccount {

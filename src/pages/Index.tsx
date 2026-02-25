@@ -19,7 +19,9 @@ export default function Dashboard() {
     const totalPending = pendingThisMonth.reduce((s, b) => s + b.amount, 0);
     const pctPaid = totalMonth > 0 ? (totalPaid / totalMonth) * 100 : 0;
     const totalBalance = bankAccounts.reduce((s, a) => s + a.balance, 0);
-    const projected = totalBalance - totalPending;
+    // Saldo projetado: saldo atual - contas pagas (por banco) - contas pendentes
+    const totalPaidByBank = bills.filter(b => b.paid && b.bankAccountId).reduce((s, b) => s + b.amount, 0);
+    const projected = totalBalance - totalPaidByBank - totalPending;
 
     const overdue = bills.filter(b => getBillStatus(b) === 'overdue');
     const dueSoon = bills.filter(b => getBillStatus(b) === 'due-soon');
