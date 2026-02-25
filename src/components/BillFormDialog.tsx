@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Checkbox } from '@/components/ui/checkbox';
 import { Textarea } from '@/components/ui/textarea';
 import { TYPE_LABELS, FREQUENCY_LABELS, BillType, Frequency } from '@/types/finance';
+import { toDateOnly } from '@/lib/date';
 
 interface Props {
   open: boolean;
@@ -39,7 +40,7 @@ export default function BillFormDialog({ open, onOpenChange, bill }: Props) {
       setName(bill.name);
       setCategory(bill.category);
       setAmount(bill.amount.toString());
-      setDueDate(bill.dueDate.split('T')[0]);
+      setDueDate(toDateOnly(bill.dueDate));
       setType(bill.type);
       setRecurring(bill.recurring);
       setFrequency(bill.frequency || 'monthly');
@@ -59,7 +60,7 @@ export default function BillFormDialog({ open, onOpenChange, bill }: Props) {
   const handleSubmit = () => {
     if (!name || !amount || !dueDate) return;
     const data = {
-      name, category, amount: parseFloat(amount), dueDate: new Date(dueDate).toISOString(),
+      name, category, amount: parseFloat(amount), dueDate: toDateOnly(dueDate),
       paid: bill?.paid || false, paidDate: bill?.paidDate,
       type, recurring, frequency: recurring ? frequency : undefined,
       installment, installmentCount: installment ? parseInt(installmentCount) : undefined,

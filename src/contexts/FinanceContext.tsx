@@ -3,6 +3,7 @@ import { Bill, BankAccount, Category } from '@/types/finance';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
+import { parseDateOnly, toDateOnly, formatDateOnly, todayDateOnly } from '@/lib/date';
 
 interface FinanceContextType {
   bills: Bill[];
@@ -106,9 +107,9 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
       name: bill.name,
       category: bill.category,
       amount: bill.amount,
-      due_date: bill.dueDate.split('T')[0],
+      due_date: toDateOnly(bill.dueDate),
       paid: bill.paid,
-      paid_date: bill.paidDate ? bill.paidDate.split('T')[0] : null,
+      paid_date: bill.paidDate ? toDateOnly(bill.paidDate) : null,
       recurring: bill.recurring,
       frequency: bill.frequency || null,
       installment: bill.installment,
@@ -128,24 +129,24 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
 
     // Generate recurring copies
     if (bill.recurring && bill.frequency) {
-      const base = new Date(bill.dueDate);
+      const base = parseDateOnly(bill.dueDate);
       for (let i = 1; i <= 11; i++) {
         const d = new Date(base);
         if (bill.frequency === 'monthly') d.setMonth(d.getMonth() + i);
         else if (bill.frequency === 'weekly') d.setDate(d.getDate() + 7 * i);
         else d.setFullYear(d.getFullYear() + i);
-        rows.push(billToDb({ ...bill, dueDate: d.toISOString(), paid: false }));
+        rows.push(billToDb({ ...bill, dueDate: formatDateOnly(d), paid: false }));
       }
     }
     // Installments
     if (bill.installment && bill.installmentCount && bill.installmentCount > 1) {
-      const base = new Date(bill.dueDate);
+      const base = parseDateOnly(bill.dueDate);
       for (let i = 1; i < bill.installmentCount; i++) {
         const d = new Date(base);
         d.setMonth(d.getMonth() + i);
         rows.push(billToDb({
           ...bill,
-          dueDate: d.toISOString(),
+          dueDate: formatDateOnly(d),
           paid: false,
           currentInstallment: (bill.currentInstallment || 1) + i,
           notes: `Parcela ${(bill.currentInstallment || 1) + i}/${bill.installmentCount}`,
@@ -174,7 +175,7 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
     const bill = bills.find(b => b.id === id);
     if (!bill) return;
 
-    const now = new Date().toISOString().split('T')[0];
+    const now = todayDateOnly();
     const { error } = await supabase.from('bills').update({ paid: true, paid_date: now }).eq('id', id);
     if (error) { toast.error('Erro ao marcar como pago'); return; }
 
