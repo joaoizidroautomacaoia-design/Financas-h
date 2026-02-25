@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useFinance } from '@/contexts/FinanceContext';
-import { Bill, getBillStatus } from '@/types/finance';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Bill } from '@/types/finance';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
@@ -15,11 +15,13 @@ interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   bill?: Bill | null;
+  editMode?: 'single' | 'group';
 }
 
-export default function BillFormDialog({ open, onOpenChange, bill }: Props) {
-  const { addBill, updateBill, categories, bankAccounts } = useFinance();
+export default function BillFormDialog({ open, onOpenChange, bill, editMode = 'single' }: Props) {
+  const { addBill, updateBill, updateBillGroup, categories, bankAccounts } = useFinance();
   const isEdit = !!bill;
+  const isGroupEdit = isEdit && editMode === 'group';
 
   const [name, setName] = useState('');
   const [category, setCategory] = useState('');
@@ -58,7 +60,7 @@ export default function BillFormDialog({ open, onOpenChange, bill }: Props) {
   }, [bill, open]);
 
   const handleSubmit = () => {
-    if (!name || !amount || !dueDate) return;
+    if (!name || !amount || (!isGroupEdit && !dueDate)) return;
     const data = {
       name, category, amount: parseFloat(amount), dueDate: toDateOnly(dueDate),
       paid: bill?.paid || false, paidDate: bill?.paidDate,
@@ -66,20 +68,32 @@ export default function BillFormDialog({ open, onOpenChange, bill }: Props) {
       installment, installmentCount: installment ? parseInt(installmentCount) : undefined,
       currentInstallment: installment ? parseInt(currentInstallment) : undefined,
       paymentMethod, bankAccountId: bankAccountId || undefined, notes,
+      groupId: bill?.groupId,
     };
     if (isEdit) {
-      updateBill({ ...data, id: bill.id });
+      if (isGroupEdit) {
+        updateBillGroup({ ...data, id: bill.id });
+      } else {
+        updateBill({ ...data, id: bill.id });
+      }
     } else {
       addBill(data);
     }
     onOpenChange(false);
   };
 
+  const title = isGroupEdit ? 'Editar Todas as Ocorrências' : isEdit ? 'Editar Conta' : 'Nova Conta';
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>{isEdit ? 'Editar Conta' : 'Nova Conta'}</DialogTitle>
+          <DialogTitle>{title}</DialogTitle>
+          {isGroupEdit && (
+            <DialogDescription>
+              As alterações serão aplicadas a todas as ocorrências desta conta (nome, valor, categoria, tipo e forma de pagamento).
+            </DialogDescription>
+          )}
         </DialogHeader>
         <div className="space-y-4 mt-2">
           <div className="grid grid-cols-2 gap-4">
@@ -109,24 +123,28 @@ export default function BillFormDialog({ open, onOpenChange, bill }: Props) {
               <Label>Valor *</Label>
               <Input type="number" value={amount} onChange={e => setAmount(e.target.value)} placeholder="0,00" step="0.01" />
             </div>
-            <div>
-              <Label>Data de Vencimento *</Label>
-              <Input type="date" value={dueDate} onChange={e => setDueDate(e.target.value)} />
-            </div>
+            {!isGroupEdit && (
+              <div>
+                <Label>Data de Vencimento *</Label>
+                <Input type="date" value={dueDate} onChange={e => setDueDate(e.target.value)} />
+              </div>
+            )}
           </div>
 
-          <div className="flex items-center gap-6">
-            <div className="flex items-center gap-2">
-              <Checkbox id="recurring" checked={recurring} onCheckedChange={v => setRecurring(!!v)} />
-              <Label htmlFor="recurring" className="text-sm">Recorrente</Label>
+          {!isEdit && (
+            <div className="flex items-center gap-6">
+              <div className="flex items-center gap-2">
+                <Checkbox id="recurring" checked={recurring} onCheckedChange={v => setRecurring(!!v)} />
+                <Label htmlFor="recurring" className="text-sm">Recorrente</Label>
+              </div>
+              <div className="flex items-center gap-2">
+                <Checkbox id="installment" checked={installment} onCheckedChange={v => setInstallment(!!v)} />
+                <Label htmlFor="installment" className="text-sm">Parcelado</Label>
+              </div>
             </div>
-            <div className="flex items-center gap-2">
-              <Checkbox id="installment" checked={installment} onCheckedChange={v => setInstallment(!!v)} />
-              <Label htmlFor="installment" className="text-sm">Parcelado</Label>
-            </div>
-          </div>
+          )}
 
-          {recurring && (
+          {!isEdit && recurring && (
             <div>
               <Label>Frequência</Label>
               <Select value={frequency} onValueChange={v => setFrequency(v as Frequency)}>
@@ -138,7 +156,7 @@ export default function BillFormDialog({ open, onOpenChange, bill }: Props) {
             </div>
           )}
 
-          {installment && (
+          {!isEdit && installment && (
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label>Nº de parcelas</Label>
@@ -167,14 +185,16 @@ export default function BillFormDialog({ open, onOpenChange, bill }: Props) {
             </div>
           </div>
 
-          <div>
-            <Label>Observações</Label>
-            <Textarea value={notes} onChange={e => setNotes(e.target.value)} placeholder="Notas adicionais..." rows={2} />
-          </div>
+          {!isGroupEdit && (
+            <div>
+              <Label>Observações</Label>
+              <Textarea value={notes} onChange={e => setNotes(e.target.value)} placeholder="Notas adicionais..." rows={2} />
+            </div>
+          )}
 
           <div className="flex justify-end gap-2 pt-2">
             <Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
-            <Button onClick={handleSubmit}>{isEdit ? 'Salvar' : 'Adicionar'}</Button>
+            <Button onClick={handleSubmit}>{isGroupEdit ? 'Salvar Todas' : isEdit ? 'Salvar' : 'Adicionar'}</Button>
           </div>
         </div>
       </DialogContent>

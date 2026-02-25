@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useFinance } from '@/contexts/FinanceContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -7,7 +7,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Plus, Trash2, Pencil, Landmark } from 'lucide-react';
 
 export default function BankAccountsPage() {
-  const { bankAccounts, addBankAccount, updateBankAccount, deleteBankAccount } = useFinance();
+  const { bankAccounts, bills, addBankAccount, updateBankAccount, deleteBankAccount } = useFinance();
   const [showForm, setShowForm] = useState(false);
   const [editAccount, setEditAccount] = useState<typeof bankAccounts[0] | null>(null);
   const [name, setName] = useState('');
@@ -39,7 +39,17 @@ export default function BankAccountsPage() {
     setShowForm(false);
   };
 
-  const totalBalance = bankAccounts.reduce((s, a) => s + a.balance, 0);
+  // Calculate effective balance: original balance minus paid bills linked to each account
+  const effectiveBalances = useMemo(() => {
+    const map: Record<string, number> = {};
+    bankAccounts.forEach(a => {
+      const paidAmount = bills.filter(b => b.paid && b.bankAccountId === a.id).reduce((s, b) => s + b.amount, 0);
+      map[a.id] = a.balance - paidAmount;
+    });
+    return map;
+  }, [bankAccounts, bills]);
+
+  const totalBalance = bankAccounts.reduce((s, a) => s + (effectiveBalances[a.id] ?? a.balance), 0);
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -75,9 +85,14 @@ export default function BankAccountsPage() {
                 </Button>
               </div>
             </div>
-            <p className={`text-3xl font-bold mono mt-4 ${a.balance >= 0 ? 'text-status-paid' : 'text-status-overdue'}`}>
-              {formatCurrency(a.balance)}
+            <p className={`text-3xl font-bold mono mt-4 ${(effectiveBalances[a.id] ?? a.balance) >= 0 ? 'text-status-paid' : 'text-status-overdue'}`}>
+              {formatCurrency(effectiveBalances[a.id] ?? a.balance)}
             </p>
+            {bills.some(b => b.paid && b.bankAccountId === a.id) && (
+              <p className="text-xs text-muted-foreground mt-1">
+                Saldo original: {formatCurrency(a.balance)}
+              </p>
+            )}
           </div>
         ))}
       </div>
