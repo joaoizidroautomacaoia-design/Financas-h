@@ -36,6 +36,14 @@ export interface Category {
   color: string;
 }
 
+export interface BankDeposit {
+  id: string;
+  bankAccountId: string;
+  amount: number;
+  depositDate: string;
+  description: string;
+}
+
 export function getBillStatus(bill: Bill): BillStatus {
   if (bill.paid) return 'paid';
   const today = new Date();

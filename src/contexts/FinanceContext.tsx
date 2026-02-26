@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { Bill, BankAccount, Category } from '@/types/finance';
+import { Bill, BankAccount, Category, BankDeposit } from '@/types/finance';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
@@ -9,6 +9,7 @@ interface FinanceContextType {
   bills: Bill[];
   bankAccounts: BankAccount[];
   categories: Category[];
+  deposits: BankDeposit[];
   loading: boolean;
   addBill: (bill: Omit<Bill, 'id'>) => void;
   updateBill: (bill: Bill) => void;
@@ -21,6 +22,8 @@ interface FinanceContextType {
   deleteBankAccount: (id: string) => void;
   addCategory: (category: Omit<Category, 'id'>) => void;
   deleteCategory: (id: string) => void;
+  addDeposit: (deposit: Omit<BankDeposit, 'id'>) => void;
+  deleteDeposit: (id: string) => void;
 }
 
 const FinanceContext = createContext<FinanceContextType | null>(null);
@@ -41,6 +44,7 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
   const [bills, setBills] = useState<Bill[]>([]);
   const [bankAccounts, setBankAccounts] = useState<BankAccount[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
+  const [deposits, setDeposits] = useState<BankDeposit[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -56,14 +60,16 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
 
   const fetchAll = async () => {
     setLoading(true);
-    const [billsRes, accountsRes, categoriesRes] = await Promise.all([
+    const [billsRes, accountsRes, categoriesRes, depositsRes] = await Promise.all([
       supabase.from('bills').select('*').order('due_date'),
       supabase.from('bank_accounts').select('*').order('created_at'),
       supabase.from('categories').select('*').order('created_at'),
+      supabase.from('bank_deposits').select('*').order('deposit_date'),
     ]);
 
     if (billsRes.data) setBills(billsRes.data.map(mapBillFromDb));
     if (accountsRes.data) setBankAccounts(accountsRes.data.map(a => ({ id: a.id, name: a.name, balance: Number(a.balance) })));
+    if (depositsRes.data) setDeposits(depositsRes.data.map(d => ({ id: d.id, bankAccountId: d.bank_account_id, amount: Number(d.amount), depositDate: d.deposit_date, description: d.description || '' })));
     if (categoriesRes.data) {
       if (categoriesRes.data.length === 0) {
         await seedCategories();
@@ -243,8 +249,27 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
     setCategories(prev => prev.filter(x => x.id !== id));
   }, []);
 
+  const addDeposit = useCallback(async (d: Omit<BankDeposit, 'id'>) => {
+    if (!user) return;
+    const { data, error } = await supabase.from('bank_deposits').insert({
+      bank_account_id: d.bankAccountId,
+      amount: d.amount,
+      deposit_date: d.depositDate,
+      description: d.description,
+      user_id: user.id,
+    }).select().single();
+    if (error) { toast.error('Erro ao registrar recebimento'); return; }
+    if (data) setDeposits(prev => [...prev, { id: data.id, bankAccountId: data.bank_account_id, amount: Number(data.amount), depositDate: data.deposit_date, description: data.description || '' }]);
+  }, [user]);
+
+  const deleteDeposit = useCallback(async (id: string) => {
+    const { error } = await supabase.from('bank_deposits').delete().eq('id', id);
+    if (error) { toast.error('Erro ao deletar recebimento'); return; }
+    setDeposits(prev => prev.filter(x => x.id !== id));
+  }, []);
+
   return (
-    <FinanceContext.Provider value={{ bills, bankAccounts, categories, loading, addBill, updateBill, updateBillGroup, deleteBill, deleteBillGroup, markAsPaid, addBankAccount, updateBankAccount, deleteBankAccount, addCategory, deleteCategory }}>
+    <FinanceContext.Provider value={{ bills, bankAccounts, categories, deposits, loading, addBill, updateBill, updateBillGroup, deleteBill, deleteBillGroup, markAsPaid, addBankAccount, updateBankAccount, deleteBankAccount, addCategory, deleteCategory, addDeposit, deleteDeposit }}>
       {children}
     </FinanceContext.Provider>
   );
