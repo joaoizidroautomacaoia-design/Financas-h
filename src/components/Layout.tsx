@@ -1,5 +1,5 @@
 import { NavLink, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Receipt, CalendarDays, BarChart3, Landmark, Menu, X, LogOut } from 'lucide-react';
+import { LayoutDashboard, Receipt, CalendarDays, BarChart3, Landmark, ArrowLeftRight, Menu, X, LogOut } from 'lucide-react';
 import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -9,6 +9,7 @@ const links = [
   { to: '/calendar', label: 'Calendário', icon: CalendarDays },
   { to: '/reports', label: 'Relatórios', icon: BarChart3 },
   { to: '/bank-accounts', label: 'Bancos', icon: Landmark },
+  { to: '/transactions', label: 'Transações', icon: ArrowLeftRight },
 ];
 
 export default function Layout({ children }: { children: React.ReactNode }) {
