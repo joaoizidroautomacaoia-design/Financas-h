@@ -44,6 +44,15 @@ export interface BankDeposit {
   description: string;
 }
 
+export interface Transaction {
+  id: string;
+  description: string;
+  amount: number;
+  category: string;
+  transactionDate: string;
+  notes: string;
+}
+
 export function getBillStatus(bill: Bill): BillStatus {
   if (bill.paid) return 'paid';
   const today = new Date();

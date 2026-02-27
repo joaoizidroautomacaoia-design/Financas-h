@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { Bill, BankAccount, Category, BankDeposit } from '@/types/finance';
+import { Bill, BankAccount, Category, BankDeposit, Transaction } from '@/types/finance';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
@@ -10,6 +10,7 @@ interface FinanceContextType {
   bankAccounts: BankAccount[];
   categories: Category[];
   deposits: BankDeposit[];
+  transactions: Transaction[];
   loading: boolean;
   addBill: (bill: Omit<Bill, 'id'>) => void;
   updateBill: (bill: Bill) => void;
@@ -24,6 +25,8 @@ interface FinanceContextType {
   deleteCategory: (id: string) => void;
   addDeposit: (deposit: Omit<BankDeposit, 'id'>) => void;
   deleteDeposit: (id: string) => void;
+  addTransaction: (t: Omit<Transaction, 'id'>) => void;
+  deleteTransaction: (id: string) => void;
 }
 
 const FinanceContext = createContext<FinanceContextType | null>(null);
@@ -45,6 +48,7 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
   const [bankAccounts, setBankAccounts] = useState<BankAccount[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [deposits, setDeposits] = useState<BankDeposit[]>([]);
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -60,16 +64,18 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
 
   const fetchAll = async () => {
     setLoading(true);
-    const [billsRes, accountsRes, categoriesRes, depositsRes] = await Promise.all([
+    const [billsRes, accountsRes, categoriesRes, depositsRes, transactionsRes] = await Promise.all([
       supabase.from('bills').select('*').order('due_date'),
       supabase.from('bank_accounts').select('*').order('created_at'),
       supabase.from('categories').select('*').order('created_at'),
       supabase.from('bank_deposits').select('*').order('deposit_date'),
+      supabase.from('transactions').select('*').order('transaction_date', { ascending: false }),
     ]);
 
     if (billsRes.data) setBills(billsRes.data.map(mapBillFromDb));
     if (accountsRes.data) setBankAccounts(accountsRes.data.map(a => ({ id: a.id, name: a.name, balance: Number(a.balance) })));
     if (depositsRes.data) setDeposits(depositsRes.data.map(d => ({ id: d.id, bankAccountId: d.bank_account_id, amount: Number(d.amount), depositDate: d.deposit_date, description: d.description || '' })));
+    if (transactionsRes.data) setTransactions(transactionsRes.data.map(t => ({ id: t.id, description: t.description, amount: Number(t.amount), category: t.category, transactionDate: t.transaction_date, notes: t.notes || '' })));
     if (categoriesRes.data) {
       if (categoriesRes.data.length === 0) {
         await seedCategories();
@@ -268,8 +274,28 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
     setDeposits(prev => prev.filter(x => x.id !== id));
   }, []);
 
+  const addTransaction = useCallback(async (t: Omit<Transaction, 'id'>) => {
+    if (!user) return;
+    const { data, error } = await supabase.from('transactions').insert({
+      description: t.description,
+      amount: t.amount,
+      category: t.category,
+      transaction_date: t.transactionDate,
+      notes: t.notes,
+      user_id: user.id,
+    }).select().single();
+    if (error) { toast.error('Erro ao adicionar transação'); return; }
+    if (data) setTransactions(prev => [{ id: data.id, description: data.description, amount: Number(data.amount), category: data.category, transactionDate: data.transaction_date, notes: data.notes || '' }, ...prev]);
+  }, [user]);
+
+  const deleteTransaction = useCallback(async (id: string) => {
+    const { error } = await supabase.from('transactions').delete().eq('id', id);
+    if (error) { toast.error('Erro ao deletar transação'); return; }
+    setTransactions(prev => prev.filter(x => x.id !== id));
+  }, []);
+
   return (
-    <FinanceContext.Provider value={{ bills, bankAccounts, categories, deposits, loading, addBill, updateBill, updateBillGroup, deleteBill, deleteBillGroup, markAsPaid, addBankAccount, updateBankAccount, deleteBankAccount, addCategory, deleteCategory, addDeposit, deleteDeposit }}>
+    <FinanceContext.Provider value={{ bills, bankAccounts, categories, deposits, transactions, loading, addBill, updateBill, updateBillGroup, deleteBill, deleteBillGroup, markAsPaid, addBankAccount, updateBankAccount, deleteBankAccount, addCategory, deleteCategory, addDeposit, deleteDeposit, addTransaction, deleteTransaction }}>
       {children}
     </FinanceContext.Provider>
   );
