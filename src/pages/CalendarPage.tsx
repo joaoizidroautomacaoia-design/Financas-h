@@ -165,9 +165,6 @@ export default function CalendarPage() {
               </p>
             )}
           </DialogHeader>
-              {selectedDay && format(selectedDay, "d 'de' MMMM", { locale: ptBR })}
-            </DialogTitle>
-          </DialogHeader>
           <Tabs defaultValue="bills" className="mt-2">
             <TabsList className="w-full">
               <TabsTrigger value="bills" className="flex-1">Contas ({selectedBills.length})</TabsTrigger>
