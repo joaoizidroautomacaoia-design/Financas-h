@@ -57,6 +57,10 @@ export default function CalendarPage() {
   const selectedBills = selectedKey ? (billsByDate[selectedKey] || []) : [];
   const selectedTransactions = selectedKey ? (transactionsByDate[selectedKey] || []) : [];
 
+  const dayTotalBills = selectedBills.reduce((sum, b) => sum + b.amount, 0);
+  const dayTotalTransactions = selectedTransactions.reduce((sum, t) => sum + t.amount, 0);
+  const dayTotal = dayTotalBills + dayTotalTransactions;
+
   const formatCurrency = (v: number) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
   return (
