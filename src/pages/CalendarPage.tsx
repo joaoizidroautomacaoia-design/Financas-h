@@ -57,6 +57,10 @@ export default function CalendarPage() {
   const selectedBills = selectedKey ? (billsByDate[selectedKey] || []) : [];
   const selectedTransactions = selectedKey ? (transactionsByDate[selectedKey] || []) : [];
 
+  const dayTotalBills = selectedBills.reduce((sum, b) => sum + b.amount, 0);
+  const dayTotalTransactions = selectedTransactions.reduce((sum, t) => sum + t.amount, 0);
+  const dayTotal = dayTotalBills + dayTotalTransactions;
+
   const formatCurrency = (v: number) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
   return (
@@ -150,6 +154,16 @@ export default function CalendarPage() {
             <DialogTitle>
               {selectedDay && format(selectedDay, "d 'de' MMMM", { locale: ptBR })}
             </DialogTitle>
+            {dayTotal > 0 && (
+              <p className="text-sm text-muted-foreground mt-1">
+                Total do dia: <span className="font-bold text-foreground">{formatCurrency(dayTotal)}</span>
+                {dayTotalBills > 0 && dayTotalTransactions > 0 && (
+                  <span className="ml-2 text-xs">
+                    (Contas: {formatCurrency(dayTotalBills)} · Transações: {formatCurrency(dayTotalTransactions)})
+                  </span>
+                )}
+              </p>
+            )}
           </DialogHeader>
           <Tabs defaultValue="bills" className="mt-2">
             <TabsList className="w-full">
