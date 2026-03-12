@@ -88,6 +88,12 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
 
   const seedCategories = async () => {
     if (!user) return;
+    // Double-check to avoid race conditions creating duplicates
+    const { data: existing } = await supabase.from('categories').select('id, name, color').eq('user_id', user.id);
+    if (existing && existing.length > 0) {
+      setCategories(existing.map(c => ({ id: c.id, name: c.name, color: c.color })));
+      return;
+    }
     const rows = DEFAULT_CATEGORIES.map(c => ({ ...c, user_id: user.id }));
     const { data } = await supabase.from('categories').insert(rows).select();
     if (data) setCategories(data.map(c => ({ id: c.id, name: c.name, color: c.color })));
