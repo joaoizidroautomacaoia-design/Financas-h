@@ -118,7 +118,7 @@ export default function BankAccountsPage() {
           <h1 className="text-2xl font-bold tracking-tight">Contas Bancárias</h1>
           <p className="text-muted-foreground text-sm">Saldo total: <span className={`mono font-semibold ${totalBalance >= 0 ? 'text-status-paid' : 'text-status-overdue'}`}>{formatCurrency(totalBalance)}</span></p>
         </div>
-        <Button onClick={openNew} className="gap-2">
+        <Button onClick={openNew} className="gap-2 bg-gradient-to-r from-primary to-primary-glow hover:opacity-90 transition-opacity">
           <Plus size={16} /> Nova Conta
         </Button>
       </div>
