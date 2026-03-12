@@ -1,13 +1,13 @@
 import { useFinance } from '@/contexts/FinanceContext';
 import { getBillStatus, STATUS_LABELS } from '@/types/finance';
-import { AlertTriangle, CheckCircle2, Clock, TrendingUp, Wallet, Landmark } from 'lucide-react';
+import { AlertTriangle, CheckCircle2, Clock, TrendingUp, Wallet, Landmark, Receipt } from 'lucide-react';
 import { useMemo } from 'react';
 import { format, isThisMonth, differenceInDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { parseDateOnly } from '@/lib/date';
 
 export default function Dashboard() {
-  const { bills, bankAccounts } = useFinance();
+  const { bills, bankAccounts, transactions } = useFinance();
 
   const stats = useMemo(() => {
     const today = new Date();
@@ -19,15 +19,26 @@ export default function Dashboard() {
     const totalPending = pendingThisMonth.reduce((s, b) => s + b.amount, 0);
     const pctPaid = totalMonth > 0 ? (totalPaid / totalMonth) * 100 : 0;
     const totalBalance = bankAccounts.reduce((s, a) => s + a.balance, 0);
-    // Saldo projetado: saldo atual - contas pagas (por banco) - contas pendentes
     const totalPaidByBank = bills.filter(b => b.paid && b.bankAccountId).reduce((s, b) => s + b.amount, 0);
     const projected = totalBalance - totalPaidByBank - totalPending;
 
     const overdue = bills.filter(b => getBillStatus(b) === 'overdue');
     const dueSoon = bills.filter(b => getBillStatus(b) === 'due-soon');
 
-    return { totalMonth, totalPaid, totalPending, pctPaid, projected, totalBalance, overdue, dueSoon, paidThisMonth, monthBills };
-  }, [bills, bankAccounts]);
+    // Transactions this month
+    const monthTransactions = transactions.filter(t => isThisMonth(parseDateOnly(t.transactionDate)));
+    const totalTransactions = monthTransactions.reduce((s, t) => s + t.amount, 0);
+
+    // Group by category
+    const byCategory = monthTransactions.reduce<Record<string, number>>((acc, t) => {
+      acc[t.category] = (acc[t.category] || 0) + t.amount;
+      return acc;
+    }, {});
+    const categoryBreakdown = Object.entries(byCategory)
+      .sort((a, b) => b[1] - a[1]);
+
+    return { totalMonth, totalPaid, totalPending, pctPaid, projected, totalBalance, overdue, dueSoon, paidThisMonth, monthBills, monthTransactions, totalTransactions, categoryBreakdown };
+  }, [bills, bankAccounts, transactions]);
 
   const formatCurrency = (v: number) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
@@ -75,6 +86,43 @@ export default function Dashboard() {
         <p className="text-xs text-muted-foreground mt-2">
           {stats.paidThisMonth.length} de {stats.monthBills.length} contas pagas este mês
         </p>
+      </div>
+
+      {/* Transactions summary */}
+      <div className="glass-card p-5">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            <Receipt size={18} className="text-primary" />
+            <h2 className="font-semibold">Transações do Mês</h2>
+          </div>
+          <div className="text-right">
+            <p className="text-lg font-bold mono">{formatCurrency(stats.totalTransactions)}</p>
+            <p className="text-xs text-muted-foreground">{stats.monthTransactions.length} transações</p>
+          </div>
+        </div>
+        {stats.categoryBreakdown.length === 0 ? (
+          <p className="text-sm text-muted-foreground">Nenhuma transação registrada este mês</p>
+        ) : (
+          <div className="space-y-2">
+            {stats.categoryBreakdown.map(([cat, amount]) => {
+              const pct = stats.totalTransactions > 0 ? (amount / stats.totalTransactions) * 100 : 0;
+              return (
+                <div key={cat}>
+                  <div className="flex items-center justify-between text-sm mb-1">
+                    <span className="text-muted-foreground">{cat}</span>
+                    <span className="font-medium mono">{formatCurrency(amount)}</span>
+                  </div>
+                  <div className="h-1.5 bg-muted rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-primary/70 rounded-full transition-all duration-500"
+                      style={{ width: `${pct}%` }}
+                    />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
