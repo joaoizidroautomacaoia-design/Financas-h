@@ -1,13 +1,14 @@
 import { useFinance } from '@/contexts/FinanceContext';
 import { getBillStatus, STATUS_LABELS } from '@/types/finance';
-import { AlertTriangle, CheckCircle2, Clock, TrendingUp, Wallet, Landmark, Receipt } from 'lucide-react';
+import { AlertTriangle, CheckCircle2, Clock, TrendingUp, Wallet, Landmark, Receipt, Sparkles } from 'lucide-react';
 import { useMemo } from 'react';
 import { format, isThisMonth, differenceInDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { parseDateOnly } from '@/lib/date';
+import { getCategoryIcon, getCategoryColor } from '@/lib/category-icons';
 
 export default function Dashboard() {
-  const { bills, bankAccounts, transactions } = useFinance();
+  const { bills, bankAccounts, transactions, categories } = useFinance();
 
   const stats = useMemo(() => {
     const today = new Date();
@@ -25,17 +26,14 @@ export default function Dashboard() {
     const overdue = bills.filter(b => getBillStatus(b) === 'overdue');
     const dueSoon = bills.filter(b => getBillStatus(b) === 'due-soon');
 
-    // Transactions this month
     const monthTransactions = transactions.filter(t => isThisMonth(parseDateOnly(t.transactionDate)));
     const totalTransactions = monthTransactions.reduce((s, t) => s + t.amount, 0);
 
-    // Group by category
     const byCategory = monthTransactions.reduce<Record<string, number>>((acc, t) => {
       acc[t.category] = (acc[t.category] || 0) + t.amount;
       return acc;
     }, {});
-    const categoryBreakdown = Object.entries(byCategory)
-      .sort((a, b) => b[1] - a[1]);
+    const categoryBreakdown = Object.entries(byCategory).sort((a, b) => b[1] - a[1]);
 
     return { totalMonth, totalPaid, totalPending, pctPaid, projected, totalBalance, overdue, dueSoon, paidThisMonth, monthBills, monthTransactions, totalTransactions, categoryBreakdown };
   }, [bills, bankAccounts, transactions]);
@@ -51,20 +49,28 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-6 animate-fade-in">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">Dashboard</h1>
-        <p className="text-muted-foreground text-sm mt-1">
-          {format(new Date(), "EEEE, d 'de' MMMM 'de' yyyy", { locale: ptBR })}
-        </p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">Dashboard</h1>
+          <p className="text-muted-foreground text-sm mt-1">
+            {format(new Date(), "EEEE, d 'de' MMMM 'de' yyyy", { locale: ptBR })}
+          </p>
+        </div>
+        <div className="hidden sm:flex items-center gap-2 text-xs text-muted-foreground bg-accent/50 px-3 py-1.5 rounded-full">
+          <Sparkles size={12} className="text-primary" />
+          <span>{stats.monthBills.length} contas este mês</span>
+        </div>
       </div>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 stagger-fade">
         {cards.map((c, i) => (
-          <div key={i} className={`glass-card p-5 border ${c.colorClass}`}>
+          <div key={i} className={`glass-card-hover p-5 border ${c.colorClass} group`}>
             <div className="flex items-center justify-between mb-3">
               <span className="text-xs font-medium uppercase tracking-wider opacity-80">{c.label}</span>
-              <c.icon size={18} />
+              <div className="w-8 h-8 rounded-lg bg-current/10 flex items-center justify-center transition-transform duration-300 group-hover:scale-110">
+                <c.icon size={16} />
+              </div>
             </div>
             <p className="text-2xl font-bold mono">{c.value}</p>
           </div>
@@ -72,14 +78,14 @@ export default function Dashboard() {
       </div>
 
       {/* Progress bar */}
-      <div className="glass-card p-5">
+      <div className="glass-card-hover p-5">
         <div className="flex items-center justify-between mb-2">
           <span className="text-sm font-medium text-muted-foreground">Progresso de Pagamentos</span>
-          <span className="text-sm font-semibold mono">{stats.pctPaid.toFixed(0)}%</span>
+          <span className="text-sm font-semibold mono text-primary">{stats.pctPaid.toFixed(0)}%</span>
         </div>
-        <div className="h-2.5 bg-muted rounded-full overflow-hidden">
+        <div className="h-3 bg-muted rounded-full overflow-hidden">
           <div
-            className="h-full bg-primary rounded-full transition-all duration-700"
+            className="h-full bg-gradient-to-r from-primary to-primary-glow rounded-full transition-all duration-1000 ease-out"
             style={{ width: `${stats.pctPaid}%` }}
           />
         </div>
@@ -88,11 +94,13 @@ export default function Dashboard() {
         </p>
       </div>
 
-      {/* Transactions summary */}
-      <div className="glass-card p-5">
+      {/* Transactions summary with category icons */}
+      <div className="glass-card-hover p-5">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
-            <Receipt size={18} className="text-primary" />
+            <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
+              <Receipt size={16} className="text-primary" />
+            </div>
             <h2 className="font-semibold">Transações do Mês</h2>
           </div>
           <div className="text-right">
@@ -103,19 +111,31 @@ export default function Dashboard() {
         {stats.categoryBreakdown.length === 0 ? (
           <p className="text-sm text-muted-foreground">Nenhuma transação registrada este mês</p>
         ) : (
-          <div className="space-y-2">
+          <div className="space-y-3">
             {stats.categoryBreakdown.map(([cat, amount]) => {
               const pct = stats.totalTransactions > 0 ? (amount / stats.totalTransactions) * 100 : 0;
+              const CatIcon = getCategoryIcon(cat);
+              const catColor = getCategoryColor(cat);
+              const matchedCat = categories.find(c => c.name === cat);
+              const color = matchedCat?.color || catColor;
               return (
-                <div key={cat}>
-                  <div className="flex items-center justify-between text-sm mb-1">
-                    <span className="text-muted-foreground">{cat}</span>
+                <div key={cat} className="group">
+                  <div className="flex items-center justify-between text-sm mb-1.5">
+                    <div className="flex items-center gap-2">
+                      <div
+                        className="w-7 h-7 rounded-lg flex items-center justify-center transition-transform duration-200 group-hover:scale-110"
+                        style={{ backgroundColor: `${color}20` }}
+                      >
+                        <CatIcon size={14} style={{ color }} />
+                      </div>
+                      <span className="text-muted-foreground">{cat}</span>
+                    </div>
                     <span className="font-medium mono">{formatCurrency(amount)}</span>
                   </div>
                   <div className="h-1.5 bg-muted rounded-full overflow-hidden">
                     <div
-                      className="h-full bg-primary/70 rounded-full transition-all duration-500"
-                      style={{ width: `${pct}%` }}
+                      className="h-full rounded-full transition-all duration-700"
+                      style={{ width: `${pct}%`, backgroundColor: color }}
                     />
                   </div>
                 </div>
@@ -127,47 +147,65 @@ export default function Dashboard() {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Overdue */}
-        <div className="glass-card p-5">
+        <div className="glass-card-hover p-5">
           <div className="flex items-center gap-2 mb-4">
-            <AlertTriangle size={18} className="text-status-overdue" />
+            <div className="w-8 h-8 rounded-lg bg-status-overdue/15 flex items-center justify-center">
+              <AlertTriangle size={16} className="text-status-overdue" />
+            </div>
             <h2 className="font-semibold">Contas Atrasadas ({stats.overdue.length})</h2>
           </div>
           {stats.overdue.length === 0 ? (
-            <p className="text-sm text-muted-foreground">Nenhuma conta atrasada 🎉</p>
+            <div className="text-center py-4">
+              <p className="text-sm text-muted-foreground">Nenhuma conta atrasada 🎉</p>
+            </div>
           ) : (
-            <div className="space-y-2">
-              {stats.overdue.map(b => (
-                <div key={b.id} className="flex items-center justify-between py-2 px-3 rounded-lg status-overdue border text-sm">
-                  <div>
-                    <p className="font-medium">{b.name}</p>
-                    <p className="text-xs opacity-70">Venceu {format(parseDateOnly(b.dueDate), 'dd/MM')} · {Math.abs(differenceInDays(parseDateOnly(b.dueDate), new Date()))} dias atrás</p>
+            <div className="space-y-2 stagger-fade">
+              {stats.overdue.map(b => {
+                const CatIcon = getCategoryIcon(b.category);
+                return (
+                  <div key={b.id} className="flex items-center justify-between py-2.5 px-3 rounded-lg status-overdue border text-sm transition-all duration-200 hover:scale-[1.01]">
+                    <div className="flex items-center gap-2.5">
+                      <CatIcon size={14} />
+                      <div>
+                        <p className="font-medium">{b.name}</p>
+                        <p className="text-xs opacity-70">Venceu {format(parseDateOnly(b.dueDate), 'dd/MM')} · {Math.abs(differenceInDays(parseDateOnly(b.dueDate), new Date()))} dias atrás</p>
+                      </div>
+                    </div>
+                    <span className="font-semibold mono">{formatCurrency(b.amount)}</span>
                   </div>
-                  <span className="font-semibold mono">{formatCurrency(b.amount)}</span>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>
 
         {/* Due soon */}
-        <div className="glass-card p-5">
+        <div className="glass-card-hover p-5">
           <div className="flex items-center gap-2 mb-4">
-            <Clock size={18} className="text-status-due-soon" />
+            <div className="w-8 h-8 rounded-lg bg-status-due-soon/15 flex items-center justify-center">
+              <Clock size={16} className="text-status-due-soon" />
+            </div>
             <h2 className="font-semibold">Vencem em até 3 dias ({stats.dueSoon.length})</h2>
           </div>
           {stats.dueSoon.length === 0 ? (
-            <p className="text-sm text-muted-foreground">Nenhuma conta próxima do vencimento</p>
+            <div className="text-center py-4">
+              <p className="text-sm text-muted-foreground">Nenhuma conta próxima do vencimento</p>
+            </div>
           ) : (
-            <div className="space-y-2">
+            <div className="space-y-2 stagger-fade">
               {stats.dueSoon.map(b => {
                 const days = differenceInDays(parseDateOnly(b.dueDate), new Date());
+                const CatIcon = getCategoryIcon(b.category);
                 return (
-                  <div key={b.id} className="flex items-center justify-between py-2 px-3 rounded-lg status-due-soon border text-sm">
-                    <div>
-                      <p className="font-medium">{b.name}</p>
-                      <p className="text-xs opacity-70">
-                        {days === 0 ? 'Vence hoje' : days === 1 ? 'Vence amanhã' : `Vence em ${days} dias`} · {format(parseDateOnly(b.dueDate), 'dd/MM')}
-                      </p>
+                  <div key={b.id} className="flex items-center justify-between py-2.5 px-3 rounded-lg status-due-soon border text-sm transition-all duration-200 hover:scale-[1.01]">
+                    <div className="flex items-center gap-2.5">
+                      <CatIcon size={14} />
+                      <div>
+                        <p className="font-medium">{b.name}</p>
+                        <p className="text-xs opacity-70">
+                          {days === 0 ? 'Vence hoje' : days === 1 ? 'Vence amanhã' : `Vence em ${days} dias`} · {format(parseDateOnly(b.dueDate), 'dd/MM')}
+                        </p>
+                      </div>
                     </div>
                     <span className="font-semibold mono">{formatCurrency(b.amount)}</span>
                   </div>
@@ -179,13 +217,20 @@ export default function Dashboard() {
       </div>
 
       {/* Bank accounts summary */}
-      <div className="glass-card p-5">
-        <h2 className="font-semibold mb-4">Contas Bancárias</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+      <div className="glass-card-hover p-5">
+        <div className="flex items-center gap-2 mb-4">
+          <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
+            <Landmark size={16} className="text-primary" />
+          </div>
+          <h2 className="font-semibold">Contas Bancárias</h2>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 stagger-fade">
           {bankAccounts.map(a => (
-            <div key={a.id} className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
+            <div key={a.id} className="flex items-center justify-between p-3.5 rounded-xl bg-accent/50 border border-border/30 transition-all duration-200 hover:bg-accent hover:border-border/50">
               <div className="flex items-center gap-3">
-                <Landmark size={16} className="text-muted-foreground" />
+                <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                  <Landmark size={14} className="text-primary" />
+                </div>
                 <span className="text-sm font-medium">{a.name}</span>
               </div>
               <span className={`font-semibold mono text-sm ${a.balance >= 0 ? 'text-status-paid' : 'text-status-overdue'}`}>

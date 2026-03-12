@@ -21,33 +21,35 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     <div className="flex h-screen overflow-hidden">
       {/* Sidebar desktop */}
       <aside className="hidden md:flex flex-col w-64 bg-sidebar border-r border-sidebar-border p-4 gap-1">
-        <div className="flex items-center gap-2 px-3 py-4 mb-4">
-          <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
+        <div className="flex items-center gap-3 px-3 py-4 mb-6">
+          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-primary to-primary-glow flex items-center justify-center glow-primary">
             <span className="text-primary-foreground font-bold text-sm">₿</span>
           </div>
-          <span className="text-foreground font-semibold text-lg tracking-tight">FinControl</span>
+          <span className="gradient-text font-bold text-xl tracking-tight">FinControl</span>
         </div>
-        {links.map(l => (
-          <NavLink
-            key={l.to}
-            to={l.to}
-            className={({ isActive }) =>
-              `flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
-                isActive
-                  ? 'bg-sidebar-accent text-sidebar-accent-foreground'
-                  : 'text-sidebar-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground'
-              }`
-            }
-          >
-            <l.icon size={18} />
-            {l.label}
-          </NavLink>
-        ))}
+        <nav className="space-y-1">
+          {links.map(l => (
+            <NavLink
+              key={l.to}
+              to={l.to}
+              className={({ isActive }) =>
+                `group flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 ${
+                  isActive
+                    ? 'bg-primary/10 text-primary border border-primary/20 shadow-sm shadow-primary/10'
+                    : 'text-sidebar-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground hover:translate-x-1'
+                }`
+              }
+            >
+              <l.icon size={18} className="transition-transform duration-200 group-hover:scale-110" />
+              {l.label}
+            </NavLink>
+          ))}
+        </nav>
         <div className="mt-auto pt-4 border-t border-sidebar-border">
           <p className="text-xs text-sidebar-foreground truncate px-3 mb-2">{user?.email}</p>
           <button
             onClick={signOut}
-            className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-sidebar-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground transition-colors w-full"
+            className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-sidebar-foreground hover:bg-destructive/10 hover:text-destructive transition-all duration-200 w-full"
           >
             <LogOut size={18} />
             Sair
@@ -56,30 +58,30 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       </aside>
 
       {/* Mobile header */}
-      <div className="md:hidden fixed top-0 left-0 right-0 z-50 bg-sidebar border-b border-sidebar-border px-4 py-3 flex items-center justify-between">
+      <div className="md:hidden fixed top-0 left-0 right-0 z-50 bg-sidebar/95 backdrop-blur-md border-b border-sidebar-border px-4 py-3 flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <div className="w-7 h-7 rounded-lg bg-primary flex items-center justify-center">
+          <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-primary to-primary-glow flex items-center justify-center">
             <span className="text-primary-foreground font-bold text-xs">₿</span>
           </div>
-          <span className="text-foreground font-semibold">FinControl</span>
+          <span className="gradient-text font-bold">FinControl</span>
         </div>
-        <button onClick={() => setMobileOpen(!mobileOpen)} className="text-foreground">
+        <button onClick={() => setMobileOpen(!mobileOpen)} className="text-foreground p-1 rounded-lg hover:bg-accent transition-colors">
           {mobileOpen ? <X size={22} /> : <Menu size={22} />}
         </button>
       </div>
 
       {/* Mobile menu */}
       {mobileOpen && (
-        <div className="md:hidden fixed inset-0 z-40 bg-background/80 backdrop-blur-sm" onClick={() => setMobileOpen(false)}>
-          <div className="absolute top-14 left-0 right-0 bg-sidebar border-b border-sidebar-border p-4 flex flex-col gap-1" onClick={e => e.stopPropagation()}>
+        <div className="md:hidden fixed inset-0 z-40 bg-background/80 backdrop-blur-sm animate-fade-in" onClick={() => setMobileOpen(false)}>
+          <div className="absolute top-14 left-0 right-0 bg-sidebar/95 backdrop-blur-md border-b border-sidebar-border p-4 flex flex-col gap-1 animate-slide-in" onClick={e => e.stopPropagation()}>
             {links.map(l => (
               <NavLink
                 key={l.to}
                 to={l.to}
                 onClick={() => setMobileOpen(false)}
-                className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+                className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 ${
                   location.pathname === l.to
-                    ? 'bg-sidebar-accent text-sidebar-accent-foreground'
+                    ? 'bg-primary/10 text-primary border border-primary/20'
                     : 'text-sidebar-foreground hover:bg-sidebar-accent/50'
                 }`}
               >
