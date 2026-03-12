@@ -36,6 +36,11 @@
 
     --radius: 0.75rem;
 
+    /* Extended palette */
+    --primary-glow: 160 84% 50%;
+    --card-hover: 222 47% 11%;
+    --card-elevated: 222 47% 10%;
+
     /* Status colors */
     --status-overdue: 0 72% 51%;
     --status-due-soon: 38 92% 50%;
@@ -85,7 +90,10 @@
 
 @layer utilities {
   .glass-card {
-    @apply bg-card/80 backdrop-blur-sm border border-border/50 rounded-xl;
+    @apply bg-card/80 backdrop-blur-sm border border-border/50 rounded-xl transition-all duration-300;
+  }
+  .glass-card-hover {
+    @apply glass-card hover:bg-[hsl(var(--card-hover))] hover:border-border hover:shadow-lg hover:shadow-primary/5;
   }
   .status-overdue {
     background-color: hsl(var(--status-overdue) / 0.15);
@@ -109,5 +117,37 @@
   }
   .mono {
     font-family: 'JetBrains Mono', monospace;
+  }
+
+  /* Staggered fade-in for lists */
+  .stagger-fade > * {
+    animation: fade-in 0.4s ease-out both;
+  }
+  .stagger-fade > *:nth-child(1) { animation-delay: 0ms; }
+  .stagger-fade > *:nth-child(2) { animation-delay: 60ms; }
+  .stagger-fade > *:nth-child(3) { animation-delay: 120ms; }
+  .stagger-fade > *:nth-child(4) { animation-delay: 180ms; }
+  .stagger-fade > *:nth-child(5) { animation-delay: 240ms; }
+  .stagger-fade > *:nth-child(6) { animation-delay: 300ms; }
+  .stagger-fade > *:nth-child(7) { animation-delay: 360ms; }
+  .stagger-fade > *:nth-child(8) { animation-delay: 420ms; }
+  .stagger-fade > *:nth-child(n+9) { animation-delay: 480ms; }
+
+  /* Gradient text utility */
+  .gradient-text {
+    background: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--primary-glow)));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  /* Glow effect */
+  .glow-primary {
+    box-shadow: 0 0 20px -5px hsl(var(--primary) / 0.4);
+  }
+
+  /* Category icon badge */
+  .category-badge {
+    @apply inline-flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full font-medium;
   }
 }

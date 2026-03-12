@@ -7,6 +7,7 @@ import { parseDateOnly } from '@/lib/date';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import BillFormDialog from '@/components/BillFormDialog';
+import { getCategoryIcon } from '@/lib/category-icons';
 
 const statusColor: Record<string, string> = {
   paid: 'status-paid',
@@ -42,7 +43,6 @@ export default function BillsPage() {
     return true;
   }).sort((a, b) => parseDateOnly(a.dueDate).getTime() - parseDateOnly(b.dueDate).getTime());
 
-  // Group bills by groupId
   const groupedBills = useMemo(() => {
     const groups: BillGroup[] = [];
     const groupMap = new Map<string, Bill[]>();
@@ -70,9 +70,7 @@ export default function BillsPage() {
       groups.push({ groupId: null, name: b.name, bills: [b], isGroup: false });
     });
 
-    // Sort groups by earliest due date
     groups.sort((a, b) => parseDateOnly(a.bills[0].dueDate).getTime() - parseDateOnly(b.bills[0].dueDate).getTime());
-
     return groups;
   }, [filtered]);
 
@@ -85,27 +83,22 @@ export default function BillsPage() {
     });
   };
 
-  const handleEditSingle = (b: Bill) => {
-    setEditBill(b);
-    setEditMode('single');
-    setShowForm(true);
-  };
-
-  const handleEditGroup = (b: Bill) => {
-    setEditBill(b);
-    setEditMode('group');
-    setShowForm(true);
-  };
+  const handleEditSingle = (b: Bill) => { setEditBill(b); setEditMode('single'); setShowForm(true); };
+  const handleEditGroup = (b: Bill) => { setEditBill(b); setEditMode('group'); setShowForm(true); };
 
   const renderBillRow = (b: Bill, isChild = false) => {
     const status = getBillStatus(b);
+    const CatIcon = getCategoryIcon(b.category);
     return (
-      <div key={b.id} className={`p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${isChild ? 'pl-10 border-l-2 border-muted ml-4' : ''}`}>
+      <div key={b.id} className={`p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 transition-all duration-200 hover:bg-accent/30 ${isChild ? 'pl-10 border-l-2 border-primary/20 ml-4' : ''}`}>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
             <span className="font-medium">{b.name}</span>
             <span className={`text-xs px-2 py-0.5 rounded-full border ${statusColor[status]}`}>{STATUS_LABELS[status]}</span>
-            <span className="text-xs px-2 py-0.5 rounded-full bg-muted text-muted-foreground">{b.category}</span>
+            <span className="category-badge bg-accent text-muted-foreground">
+              <CatIcon size={12} />
+              {b.category}
+            </span>
           </div>
           <div className="flex gap-3 mt-1 text-xs text-muted-foreground">
             <span>Vence: {format(parseDateOnly(b.dueDate), 'dd/MM/yyyy')}</span>
@@ -117,14 +110,14 @@ export default function BillsPage() {
           <span className="font-bold mono text-lg">{formatCurrency(b.amount)}</span>
           <div className="flex gap-1">
             {!b.paid && (
-              <Button variant="ghost" size="icon" className="h-8 w-8 text-status-paid hover:text-status-paid" onClick={() => markAsPaid(b.id)} title="Marcar como pago">
+              <Button variant="ghost" size="icon" className="h-8 w-8 text-status-paid hover:text-status-paid hover:bg-status-paid/10" onClick={() => markAsPaid(b.id)} title="Marcar como pago">
                 <CheckCircle2 size={16} />
               </Button>
             )}
-            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleEditSingle(b)} title="Editar este mês">
+            <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-accent" onClick={() => handleEditSingle(b)} title="Editar">
               <Pencil size={16} />
             </Button>
-            <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => deleteBill(b.id)} title="Deletar este mês">
+            <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10" onClick={() => deleteBill(b.id)} title="Deletar">
               <Trash2 size={16} />
             </Button>
           </div>
@@ -140,14 +133,16 @@ export default function BillsPage() {
           <h1 className="text-2xl font-bold tracking-tight">Contas</h1>
           <p className="text-muted-foreground text-sm">{filtered.length} contas encontradas</p>
         </div>
-        <Button onClick={() => { setEditBill(null); setEditMode('single'); setShowForm(true); }} className="gap-2">
+        <Button onClick={() => { setEditBill(null); setEditMode('single'); setShowForm(true); }} className="gap-2 bg-gradient-to-r from-primary to-primary-glow hover:opacity-90 transition-opacity">
           <Plus size={16} /> Nova Conta
         </Button>
       </div>
 
       {/* Filters */}
       <div className="glass-card p-4 flex flex-wrap gap-3 items-center">
-        <Filter size={16} className="text-muted-foreground" />
+        <div className="w-8 h-8 rounded-lg bg-accent flex items-center justify-center">
+          <Filter size={14} className="text-muted-foreground" />
+        </div>
         <Select value={statusFilter} onValueChange={setStatusFilter}>
           <SelectTrigger className="w-[150px] h-9 text-sm"><SelectValue placeholder="Status" /></SelectTrigger>
           <SelectContent>
@@ -175,42 +170,41 @@ export default function BillsPage() {
       </div>
 
       {/* Bills list */}
-      <div className="space-y-2">
+      <div className="space-y-2 stagger-fade">
         {groupedBills.map(group => {
           if (!group.isGroup) {
-            // Single bill, render as before
             const b = group.bills[0];
             const status = getBillStatus(b);
             return (
-              <div key={b.id} className={`glass-card border ${statusColor[status]}`}>
+              <div key={b.id} className={`glass-card-hover border ${statusColor[status]}`}>
                 {renderBillRow(b)}
               </div>
             );
           }
 
-          // Grouped bill card
           const isExpanded = expandedGroups.has(group.groupId!);
           const paidCount = group.bills.filter(b => b.paid).length;
-          const totalAmount = group.bills.reduce((s, b) => s + b.amount, 0);
           const firstBill = group.bills[0];
-          const nextUnpaid = group.bills.find(b => !b.paid);
+          const CatIcon = getCategoryIcon(firstBill.category);
 
           return (
-            <div key={group.groupId} className="glass-card border overflow-hidden">
-              {/* Group header */}
+            <div key={group.groupId} className="glass-card-hover border overflow-hidden">
               <div
-                className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 cursor-pointer hover:bg-accent/50 transition-colors"
+                className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 cursor-pointer hover:bg-accent/30 transition-all duration-200"
                 onClick={() => toggleGroup(group.groupId!)}
               >
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
-                    {isExpanded ? <ChevronDown size={16} className="text-muted-foreground" /> : <ChevronRight size={16} className="text-muted-foreground" />}
+                    {isExpanded ? <ChevronDown size={16} className="text-primary" /> : <ChevronRight size={16} className="text-muted-foreground" />}
                     <Layers size={16} className="text-primary" />
                     <span className="font-semibold">{group.name}</span>
                     <span className="text-xs px-2 py-0.5 rounded-full bg-primary/10 text-primary font-medium">
                       {group.bills.length} meses
                     </span>
-                    <span className="text-xs px-2 py-0.5 rounded-full bg-muted text-muted-foreground">{firstBill.category}</span>
+                    <span className="category-badge bg-accent text-muted-foreground">
+                      <CatIcon size={12} />
+                      {firstBill.category}
+                    </span>
                   </div>
                   <div className="flex gap-3 mt-1 text-xs text-muted-foreground ml-8">
                     <span>{paidCount}/{group.bills.length} pagos</span>
@@ -225,19 +219,18 @@ export default function BillsPage() {
                     <span className="text-xs text-muted-foreground block">por mês</span>
                   </div>
                   <div className="flex gap-1">
-                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleEditGroup(firstBill)} title="Editar todas">
+                    <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-accent" onClick={() => handleEditGroup(firstBill)} title="Editar todas">
                       <Pencil size={16} />
                     </Button>
-                    <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => deleteBillGroup(group.groupId!)} title="Deletar todas">
+                    <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10" onClick={() => deleteBillGroup(group.groupId!)} title="Deletar todas">
                       <Trash2 size={16} />
                     </Button>
                   </div>
                 </div>
               </div>
 
-              {/* Expanded children */}
               {isExpanded && (
-                <div className="border-t divide-y divide-border">
+                <div className="border-t divide-y divide-border/50 animate-fade-in">
                   {group.bills.map(b => renderBillRow(b, true))}
                 </div>
               )}

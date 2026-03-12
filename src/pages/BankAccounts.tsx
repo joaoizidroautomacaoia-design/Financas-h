@@ -118,12 +118,12 @@ export default function BankAccountsPage() {
           <h1 className="text-2xl font-bold tracking-tight">Contas Bancárias</h1>
           <p className="text-muted-foreground text-sm">Saldo total: <span className={`mono font-semibold ${totalBalance >= 0 ? 'text-status-paid' : 'text-status-overdue'}`}>{formatCurrency(totalBalance)}</span></p>
         </div>
-        <Button onClick={openNew} className="gap-2">
+        <Button onClick={openNew} className="gap-2 bg-gradient-to-r from-primary to-primary-glow hover:opacity-90 transition-opacity">
           <Plus size={16} /> Nova Conta
         </Button>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 stagger-fade">
         {bankAccounts.map(a => {
           const acDeposits = depositsByAccount[a.id] || [];
           const received = receivedByAccount[a.id] || 0;
@@ -131,10 +131,10 @@ export default function BankAccountsPage() {
           const isExpanded = expandedId === a.id;
 
           return (
-            <div key={a.id} className="glass-card p-6">
+            <div key={a.id} className="glass-card-hover p-6 group">
               <div className="flex items-start justify-between">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
+                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center transition-transform duration-200 group-hover:scale-110">
                     <Landmark size={20} className="text-primary" />
                   </div>
                   <div>
