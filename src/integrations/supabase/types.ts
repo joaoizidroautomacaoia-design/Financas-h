@@ -180,6 +180,33 @@ export type Database = {
         }
         Relationships: []
       }
+      dependents: {
+        Row: {
+          created_at: string
+          dependent_email: string
+          dependent_user_id: string | null
+          id: string
+          owner_id: string
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          dependent_email: string
+          dependent_user_id?: string | null
+          id?: string
+          owner_id: string
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          dependent_email?: string
+          dependent_user_id?: string | null
+          id?: string
+          owner_id?: string
+          status?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -245,7 +272,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      can_access_user_data: {
+        Args: { _accessor_id: string; _user_id: string }
+        Returns: boolean
+      }
     }
     Enums: {
       [_ in never]: never
