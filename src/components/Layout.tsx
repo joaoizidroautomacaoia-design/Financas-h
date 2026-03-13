@@ -47,14 +47,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           ))}
         </nav>
         <div className="mt-auto pt-4 border-t border-sidebar-border">
-          <p className="text-xs text-sidebar-foreground truncate px-3 mb-2">{user?.email}</p>
-          <button
-            onClick={signOut}
-            className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-sidebar-foreground hover:bg-destructive/10 hover:text-destructive transition-all duration-200 w-full"
-          >
-            <LogOut size={18} />
-            Sair
-          </button>
+          <p className="text-xs text-sidebar-foreground truncate px-3">{user?.email}</p>
         </div>
       </aside>
 
