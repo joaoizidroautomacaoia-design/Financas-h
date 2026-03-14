@@ -45,6 +45,7 @@ const DEFAULT_CATEGORIES: Omit<Category, 'id'>[] = [
 
 export function FinanceProvider({ children }: { children: React.ReactNode }) {
   const { user } = useAuth();
+  const { activeWorkspace } = useWorkspace();
   const [bills, setBills] = useState<Bill[]>([]);
   const [bankAccounts, setBankAccounts] = useState<BankAccount[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
