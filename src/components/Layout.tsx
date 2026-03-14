@@ -48,7 +48,8 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             </NavLink>
           ))}
         </nav>
-        <div className="mt-auto pt-4 border-t border-sidebar-border">
+        <div className="mt-auto pt-4 border-t border-sidebar-border space-y-3">
+          <WorkspaceSwitcher />
           <p className="text-xs text-sidebar-foreground truncate px-3">{user?.email}</p>
         </div>
       </aside>
