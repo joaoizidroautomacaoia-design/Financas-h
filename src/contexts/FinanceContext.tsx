@@ -258,7 +258,7 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
 
   const addCategory = useCallback(async (c: Omit<Category, 'id'>) => {
     if (!user) return;
-    const { data, error } = await supabase.from('categories').insert({ name: c.name, color: c.color, user_id: user.id }).select().single();
+    const { data, error } = await supabase.from('categories').insert({ name: c.name, color: c.color, user_id: effectiveUserId! }).select().single();
     if (error) { toast.error('Erro ao adicionar categoria'); return; }
     if (data) setCategories(prev => [...prev, { id: data.id, name: data.name, color: data.color }]);
   }, [user]);
