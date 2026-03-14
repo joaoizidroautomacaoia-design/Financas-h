@@ -38,20 +38,22 @@ function ProtectedRoutes() {
   if (!user) return <Navigate to="/auth" replace />;
 
   return (
-    <FinanceProvider>
-      <Layout>
-        <Routes>
-          <Route path="/" element={<Index />} />
-          <Route path="/bills" element={<Bills />} />
-          <Route path="/calendar" element={<CalendarPage />} />
-          <Route path="/reports" element={<Reports />} />
-          <Route path="/bank-accounts" element={<BankAccounts />} />
-          <Route path="/transactions" element={<Transactions />} />
-          <Route path="/settings" element={<Settings />} />
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </Layout>
-    </FinanceProvider>
+    <WorkspaceProvider>
+      <FinanceProvider>
+        <Layout>
+          <Routes>
+            <Route path="/" element={<Index />} />
+            <Route path="/bills" element={<Bills />} />
+            <Route path="/calendar" element={<CalendarPage />} />
+            <Route path="/reports" element={<Reports />} />
+            <Route path="/bank-accounts" element={<BankAccounts />} />
+            <Route path="/transactions" element={<Transactions />} />
+            <Route path="/settings" element={<Settings />} />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </Layout>
+      </FinanceProvider>
+    </WorkspaceProvider>
   );
 }
 
