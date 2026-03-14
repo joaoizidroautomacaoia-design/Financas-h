@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useWorkspace } from '@/contexts/WorkspaceContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -17,18 +18,17 @@ interface Dependent {
 
 export default function SettingsPage() {
   const { user, signOut } = useAuth();
+  const { refreshInvites } = useWorkspace();
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [changingPassword, setChangingPassword] = useState(false);
   const [dependentEmail, setDependentEmail] = useState('');
   const [dependents, setDependents] = useState<Dependent[]>([]);
   const [addingDependent, setAddingDependent] = useState(false);
-  const [pendingInvites, setPendingInvites] = useState<Dependent[]>([]);
 
   useEffect(() => {
     if (user) {
       fetchDependents();
-      fetchPendingInvites();
     }
   }, [user]);
 
@@ -39,16 +39,6 @@ export default function SettingsPage() {
       .eq('owner_id', user!.id)
       .order('created_at');
     if (data) setDependents(data);
-  };
-
-  const fetchPendingInvites = async () => {
-    if (!user?.email) return;
-    const { data } = await supabase
-      .from('dependents')
-      .select('*')
-      .eq('dependent_email', user.email)
-      .eq('status', 'pending');
-    if (data) setPendingInvites(data);
   };
 
   const handleChangePassword = async (e: React.FormEvent) => {
