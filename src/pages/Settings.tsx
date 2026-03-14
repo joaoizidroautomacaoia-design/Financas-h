@@ -110,19 +110,6 @@ export default function SettingsPage() {
     }
   };
 
-  const handleAcceptInvite = async (invite: Dependent) => {
-    const { error } = await supabase
-      .from('dependents')
-      .update({ dependent_user_id: user!.id, status: 'accepted' })
-      .eq('id', invite.id);
-    if (error) {
-      toast.error('Erro ao aceitar convite');
-    } else {
-      toast.success('Convite aceito! Agora você compartilha os dados financeiros.');
-      fetchPendingInvites();
-    }
-  };
-
   return (
     <div className="space-y-8 animate-fade-in">
       <div className="flex items-center gap-3">
@@ -134,26 +121,6 @@ export default function SettingsPage() {
           <p className="text-sm text-muted-foreground">{user?.email}</p>
         </div>
       </div>
-
-      {/* Pending Invites */}
-      {pendingInvites.length > 0 && (
-        <div className="glass-card p-6 space-y-4 border-primary/30">
-          <h2 className="text-lg font-semibold flex items-center gap-2">
-            <Mail size={20} className="text-primary" />
-            Convites Pendentes
-          </h2>
-          <div className="space-y-3">
-            {pendingInvites.map(invite => (
-              <div key={invite.id} className="flex items-center justify-between p-3 rounded-lg bg-primary/5 border border-primary/10">
-                <p className="text-sm">Você foi convidado para compartilhar dados financeiros</p>
-                <Button size="sm" onClick={() => handleAcceptInvite(invite)} className="bg-gradient-to-r from-primary to-primary-glow">
-                  Aceitar
-                </Button>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
 
       {/* Change Password */}
       <div className="glass-card p-6 space-y-4">
