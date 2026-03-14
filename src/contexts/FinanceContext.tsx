@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect, useCallback } fr
 import { Bill, BankAccount, Category, BankDeposit, Transaction } from '@/types/finance';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { useWorkspace } from '@/contexts/WorkspaceContext';
 import { toast } from 'sonner';
 import { parseDateOnly, toDateOnly, formatDateOnly, todayDateOnly } from '@/lib/date';
 
