@@ -2,6 +2,8 @@ import { NavLink, useLocation } from 'react-router-dom';
 import { LayoutDashboard, Receipt, CalendarDays, BarChart3, Landmark, ArrowLeftRight, Menu, X, Settings } from 'lucide-react';
 import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import WorkspaceSwitcher from '@/components/WorkspaceSwitcher';
+import PendingInvitesBanner from '@/components/PendingInvitesBanner';
 
 const links = [
   { to: '/', label: 'Dashboard', icon: LayoutDashboard },
