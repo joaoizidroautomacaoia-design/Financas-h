@@ -239,7 +239,7 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
 
   const addBankAccount = useCallback(async (a: Omit<BankAccount, 'id'>) => {
     if (!user) return;
-    const { data, error } = await supabase.from('bank_accounts').insert({ name: a.name, balance: a.balance, user_id: user.id }).select().single();
+    const { data, error } = await supabase.from('bank_accounts').insert({ name: a.name, balance: a.balance, user_id: effectiveUserId! }).select().single();
     if (error) { toast.error('Erro ao adicionar conta bancária'); return; }
     if (data) setBankAccounts(prev => [...prev, { id: data.id, name: data.name, balance: Number(data.balance) }]);
   }, [user]);
