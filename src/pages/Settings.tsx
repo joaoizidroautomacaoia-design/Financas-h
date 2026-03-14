@@ -95,6 +95,7 @@ export default function SettingsPage() {
       toast.success(`Convite enviado para ${dependentEmail}`);
       setDependentEmail('');
       fetchDependents();
+      refreshInvites();
     }
     setAddingDependent(false);
   };
