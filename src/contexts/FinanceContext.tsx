@@ -101,7 +101,7 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
       setCategories(existing.map(c => ({ id: c.id, name: c.name, color: c.color })));
       return;
     }
-    const rows = DEFAULT_CATEGORIES.map(c => ({ ...c, user_id: user.id }));
+    const rows = DEFAULT_CATEGORIES.map(c => ({ ...c, user_id: effectiveUserId }));
     const { data } = await supabase.from('categories').insert(rows).select();
     if (data) setCategories(data.map(c => ({ id: c.id, name: c.name, color: c.color })));
   };
