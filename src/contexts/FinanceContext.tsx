@@ -296,7 +296,7 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
       category: t.category,
       transaction_date: t.transactionDate,
       notes: t.notes,
-      user_id: user.id,
+      user_id: effectiveUserId!,
     }).select().single();
     if (error) { toast.error('Erro ao adicionar transação'); return; }
     if (data) setTransactions(prev => [{ id: data.id, description: data.description, amount: Number(data.amount), category: data.category, transactionDate: data.transaction_date, notes: data.notes || '' }, ...prev]);
