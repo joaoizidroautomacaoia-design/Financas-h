@@ -53,8 +53,11 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // The effective user_id to query data for (workspace owner)
+  const effectiveUserId = activeWorkspace?.id || user?.id;
+
   useEffect(() => {
-    if (!user) {
+    if (!user || !effectiveUserId) {
       setBills([]);
       setBankAccounts([]);
       setCategories([]);
@@ -62,7 +65,7 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
       return;
     }
     fetchAll();
-  }, [user]);
+  }, [user, effectiveUserId]);
 
   const fetchAll = async () => {
     setLoading(true);
