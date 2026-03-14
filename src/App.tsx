@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { FinanceProvider } from "@/contexts/FinanceContext";
+import { WorkspaceProvider } from "@/contexts/WorkspaceContext";
 import Layout from "@/components/Layout";
 import Index from "./pages/Index";
 import Bills from "./pages/Bills";
@@ -37,20 +38,22 @@ function ProtectedRoutes() {
   if (!user) return <Navigate to="/auth" replace />;
 
   return (
-    <FinanceProvider>
-      <Layout>
-        <Routes>
-          <Route path="/" element={<Index />} />
-          <Route path="/bills" element={<Bills />} />
-          <Route path="/calendar" element={<CalendarPage />} />
-          <Route path="/reports" element={<Reports />} />
-          <Route path="/bank-accounts" element={<BankAccounts />} />
-          <Route path="/transactions" element={<Transactions />} />
-          <Route path="/settings" element={<Settings />} />
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </Layout>
-    </FinanceProvider>
+    <WorkspaceProvider>
+      <FinanceProvider>
+        <Layout>
+          <Routes>
+            <Route path="/" element={<Index />} />
+            <Route path="/bills" element={<Bills />} />
+            <Route path="/calendar" element={<CalendarPage />} />
+            <Route path="/reports" element={<Reports />} />
+            <Route path="/bank-accounts" element={<BankAccounts />} />
+            <Route path="/transactions" element={<Transactions />} />
+            <Route path="/settings" element={<Settings />} />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </Layout>
+      </FinanceProvider>
+    </WorkspaceProvider>
   );
 }
 

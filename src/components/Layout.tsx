@@ -2,6 +2,8 @@ import { NavLink, useLocation } from 'react-router-dom';
 import { LayoutDashboard, Receipt, CalendarDays, BarChart3, Landmark, ArrowLeftRight, Menu, X, Settings } from 'lucide-react';
 import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import WorkspaceSwitcher from '@/components/WorkspaceSwitcher';
+import PendingInvitesBanner from '@/components/PendingInvitesBanner';
 
 const links = [
   { to: '/', label: 'Dashboard', icon: LayoutDashboard },
@@ -46,7 +48,8 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             </NavLink>
           ))}
         </nav>
-        <div className="mt-auto pt-4 border-t border-sidebar-border">
+        <div className="mt-auto pt-4 border-t border-sidebar-border space-y-3">
+          <WorkspaceSwitcher />
           <p className="text-xs text-sidebar-foreground truncate px-3">{user?.email}</p>
         </div>
       </aside>
@@ -68,6 +71,9 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       {mobileOpen && (
         <div className="md:hidden fixed inset-0 z-40 bg-background/80 backdrop-blur-sm animate-fade-in" onClick={() => setMobileOpen(false)}>
           <div className="absolute top-14 left-0 right-0 bg-sidebar/95 backdrop-blur-md border-b border-sidebar-border p-4 flex flex-col gap-1 animate-slide-in" onClick={e => e.stopPropagation()}>
+            <div className="mb-2">
+              <WorkspaceSwitcher />
+            </div>
             {links.map(l => (
               <NavLink
                 key={l.to}
@@ -90,6 +96,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       {/* Main content */}
       <main className="flex-1 overflow-auto md:pt-0 pt-14">
         <div className="p-4 md:p-8 max-w-7xl mx-auto">
+          <PendingInvitesBanner />
           {children}
         </div>
       </main>

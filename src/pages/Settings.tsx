@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useWorkspace } from '@/contexts/WorkspaceContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -17,18 +18,17 @@ interface Dependent {
 
 export default function SettingsPage() {
   const { user, signOut } = useAuth();
+  const { refreshInvites } = useWorkspace();
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [changingPassword, setChangingPassword] = useState(false);
   const [dependentEmail, setDependentEmail] = useState('');
   const [dependents, setDependents] = useState<Dependent[]>([]);
   const [addingDependent, setAddingDependent] = useState(false);
-  const [pendingInvites, setPendingInvites] = useState<Dependent[]>([]);
 
   useEffect(() => {
     if (user) {
       fetchDependents();
-      fetchPendingInvites();
     }
   }, [user]);
 
@@ -39,16 +39,6 @@ export default function SettingsPage() {
       .eq('owner_id', user!.id)
       .order('created_at');
     if (data) setDependents(data);
-  };
-
-  const fetchPendingInvites = async () => {
-    if (!user?.email) return;
-    const { data } = await supabase
-      .from('dependents')
-      .select('*')
-      .eq('dependent_email', user.email)
-      .eq('status', 'pending');
-    if (data) setPendingInvites(data);
   };
 
   const handleChangePassword = async (e: React.FormEvent) => {
@@ -105,6 +95,7 @@ export default function SettingsPage() {
       toast.success(`Convite enviado para ${dependentEmail}`);
       setDependentEmail('');
       fetchDependents();
+      refreshInvites();
     }
     setAddingDependent(false);
   };
@@ -119,19 +110,6 @@ export default function SettingsPage() {
     }
   };
 
-  const handleAcceptInvite = async (invite: Dependent) => {
-    const { error } = await supabase
-      .from('dependents')
-      .update({ dependent_user_id: user!.id, status: 'accepted' })
-      .eq('id', invite.id);
-    if (error) {
-      toast.error('Erro ao aceitar convite');
-    } else {
-      toast.success('Convite aceito! Agora você compartilha os dados financeiros.');
-      fetchPendingInvites();
-    }
-  };
-
   return (
     <div className="space-y-8 animate-fade-in">
       <div className="flex items-center gap-3">
@@ -143,26 +121,6 @@ export default function SettingsPage() {
           <p className="text-sm text-muted-foreground">{user?.email}</p>
         </div>
       </div>
-
-      {/* Pending Invites */}
-      {pendingInvites.length > 0 && (
-        <div className="glass-card p-6 space-y-4 border-primary/30">
-          <h2 className="text-lg font-semibold flex items-center gap-2">
-            <Mail size={20} className="text-primary" />
-            Convites Pendentes
-          </h2>
-          <div className="space-y-3">
-            {pendingInvites.map(invite => (
-              <div key={invite.id} className="flex items-center justify-between p-3 rounded-lg bg-primary/5 border border-primary/10">
-                <p className="text-sm">Você foi convidado para compartilhar dados financeiros</p>
-                <Button size="sm" onClick={() => handleAcceptInvite(invite)} className="bg-gradient-to-r from-primary to-primary-glow">
-                  Aceitar
-                </Button>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
 
       {/* Change Password */}
       <div className="glass-card p-6 space-y-4">

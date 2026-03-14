@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect, useCallback } fr
 import { Bill, BankAccount, Category, BankDeposit, Transaction } from '@/types/finance';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { useWorkspace } from '@/contexts/WorkspaceContext';
 import { toast } from 'sonner';
 import { parseDateOnly, toDateOnly, formatDateOnly, todayDateOnly } from '@/lib/date';
 
@@ -44,6 +45,7 @@ const DEFAULT_CATEGORIES: Omit<Category, 'id'>[] = [
 
 export function FinanceProvider({ children }: { children: React.ReactNode }) {
   const { user } = useAuth();
+  const { activeWorkspace } = useWorkspace();
   const [bills, setBills] = useState<Bill[]>([]);
   const [bankAccounts, setBankAccounts] = useState<BankAccount[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -51,8 +53,11 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // The effective user_id to query data for (workspace owner)
+  const effectiveUserId = activeWorkspace?.id || user?.id;
+
   useEffect(() => {
-    if (!user) {
+    if (!user || !effectiveUserId) {
       setBills([]);
       setBankAccounts([]);
       setCategories([]);
@@ -60,16 +65,17 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
       return;
     }
     fetchAll();
-  }, [user]);
+  }, [user, effectiveUserId]);
 
   const fetchAll = async () => {
     setLoading(true);
+    const uid = effectiveUserId!;
     const [billsRes, accountsRes, categoriesRes, depositsRes, transactionsRes] = await Promise.all([
-      supabase.from('bills').select('*').order('due_date'),
-      supabase.from('bank_accounts').select('*').order('created_at'),
-      supabase.from('categories').select('*').order('created_at'),
-      supabase.from('bank_deposits').select('*').order('deposit_date'),
-      supabase.from('transactions').select('*').order('transaction_date', { ascending: false }),
+      supabase.from('bills').select('*').eq('user_id', uid).order('due_date'),
+      supabase.from('bank_accounts').select('*').eq('user_id', uid).order('created_at'),
+      supabase.from('categories').select('*').eq('user_id', uid).order('created_at'),
+      supabase.from('bank_deposits').select('*').eq('user_id', uid).order('deposit_date'),
+      supabase.from('transactions').select('*').eq('user_id', uid).order('transaction_date', { ascending: false }),
     ]);
 
     if (billsRes.data) setBills(billsRes.data.map(mapBillFromDb));
@@ -87,14 +93,16 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
   };
 
   const seedCategories = async () => {
-    if (!user) return;
+    if (!user || !effectiveUserId) return;
+    // Only seed for own workspace
+    if (effectiveUserId !== user.id) return;
     // Double-check to avoid race conditions creating duplicates
-    const { data: existing } = await supabase.from('categories').select('id, name, color').eq('user_id', user.id);
+    const { data: existing } = await supabase.from('categories').select('id, name, color').eq('user_id', effectiveUserId);
     if (existing && existing.length > 0) {
       setCategories(existing.map(c => ({ id: c.id, name: c.name, color: c.color })));
       return;
     }
-    const rows = DEFAULT_CATEGORIES.map(c => ({ ...c, user_id: user.id }));
+    const rows = DEFAULT_CATEGORIES.map(c => ({ ...c, user_id: effectiveUserId }));
     const { data } = await supabase.from('categories').insert(rows).select();
     if (data) setCategories(data.map(c => ({ id: c.id, name: c.name, color: c.color })));
   };
@@ -138,7 +146,7 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
       bank_account_id: bill.bankAccountId || null,
       type: bill.type,
       notes: bill.notes || '',
-      user_id: user!.id,
+      user_id: effectiveUserId!,
       group_id: bill.groupId || null,
     };
   }
@@ -231,7 +239,7 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
 
   const addBankAccount = useCallback(async (a: Omit<BankAccount, 'id'>) => {
     if (!user) return;
-    const { data, error } = await supabase.from('bank_accounts').insert({ name: a.name, balance: a.balance, user_id: user.id }).select().single();
+    const { data, error } = await supabase.from('bank_accounts').insert({ name: a.name, balance: a.balance, user_id: effectiveUserId! }).select().single();
     if (error) { toast.error('Erro ao adicionar conta bancária'); return; }
     if (data) setBankAccounts(prev => [...prev, { id: data.id, name: data.name, balance: Number(data.balance) }]);
   }, [user]);
@@ -250,7 +258,7 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
 
   const addCategory = useCallback(async (c: Omit<Category, 'id'>) => {
     if (!user) return;
-    const { data, error } = await supabase.from('categories').insert({ name: c.name, color: c.color, user_id: user.id }).select().single();
+    const { data, error } = await supabase.from('categories').insert({ name: c.name, color: c.color, user_id: effectiveUserId! }).select().single();
     if (error) { toast.error('Erro ao adicionar categoria'); return; }
     if (data) setCategories(prev => [...prev, { id: data.id, name: data.name, color: data.color }]);
   }, [user]);
@@ -268,7 +276,7 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
       amount: d.amount,
       deposit_date: d.depositDate,
       description: d.description,
-      user_id: user.id,
+      user_id: effectiveUserId!,
     }).select().single();
     if (error) { toast.error('Erro ao registrar recebimento'); return; }
     if (data) setDeposits(prev => [...prev, { id: data.id, bankAccountId: data.bank_account_id, amount: Number(data.amount), depositDate: data.deposit_date, description: data.description || '' }]);
@@ -288,7 +296,7 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
       category: t.category,
       transaction_date: t.transactionDate,
       notes: t.notes,
-      user_id: user.id,
+      user_id: effectiveUserId!,
     }).select().single();
     if (error) { toast.error('Erro ao adicionar transação'); return; }
     if (data) setTransactions(prev => [{ id: data.id, description: data.description, amount: Number(data.amount), category: data.category, transactionDate: data.transaction_date, notes: data.notes || '' }, ...prev]);
