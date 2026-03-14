@@ -276,7 +276,7 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
       amount: d.amount,
       deposit_date: d.depositDate,
       description: d.description,
-      user_id: user.id,
+      user_id: effectiveUserId!,
     }).select().single();
     if (error) { toast.error('Erro ao registrar recebimento'); return; }
     if (data) setDeposits(prev => [...prev, { id: data.id, bankAccountId: data.bank_account_id, amount: Number(data.amount), depositDate: data.deposit_date, description: data.description || '' }]);
