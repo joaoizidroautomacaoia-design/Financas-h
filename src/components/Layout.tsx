@@ -93,6 +93,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       {/* Main content */}
       <main className="flex-1 overflow-auto md:pt-0 pt-14">
         <div className="p-4 md:p-8 max-w-7xl mx-auto">
+          <PendingInvitesBanner />
           {children}
         </div>
       </main>
