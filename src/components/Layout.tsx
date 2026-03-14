@@ -71,6 +71,9 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       {mobileOpen && (
         <div className="md:hidden fixed inset-0 z-40 bg-background/80 backdrop-blur-sm animate-fade-in" onClick={() => setMobileOpen(false)}>
           <div className="absolute top-14 left-0 right-0 bg-sidebar/95 backdrop-blur-md border-b border-sidebar-border p-4 flex flex-col gap-1 animate-slide-in" onClick={e => e.stopPropagation()}>
+            <div className="mb-2">
+              <WorkspaceSwitcher />
+            </div>
             {links.map(l => (
               <NavLink
                 key={l.to}
