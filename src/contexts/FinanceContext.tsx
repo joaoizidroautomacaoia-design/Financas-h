@@ -146,7 +146,7 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
       bank_account_id: bill.bankAccountId || null,
       type: bill.type,
       notes: bill.notes || '',
-      user_id: user!.id,
+      user_id: effectiveUserId!,
       group_id: bill.groupId || null,
     };
   }
