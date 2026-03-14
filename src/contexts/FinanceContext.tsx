@@ -92,9 +92,11 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
   };
 
   const seedCategories = async () => {
-    if (!user) return;
+    if (!user || !effectiveUserId) return;
+    // Only seed for own workspace
+    if (effectiveUserId !== user.id) return;
     // Double-check to avoid race conditions creating duplicates
-    const { data: existing } = await supabase.from('categories').select('id, name, color').eq('user_id', user.id);
+    const { data: existing } = await supabase.from('categories').select('id, name, color').eq('user_id', effectiveUserId);
     if (existing && existing.length > 0) {
       setCategories(existing.map(c => ({ id: c.id, name: c.name, color: c.color })));
       return;
