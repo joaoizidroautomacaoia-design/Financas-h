@@ -1,5 +1,5 @@
 import { NavLink, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Receipt, CalendarDays, BarChart3, Landmark, ArrowLeftRight, Menu, X, Settings } from 'lucide-react';
+import { LayoutDashboard, Receipt, CalendarDays, BarChart3, Landmark, ArrowLeftRight, Menu, X, Settings, History } from 'lucide-react';
 import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import WorkspaceSwitcher from '@/components/WorkspaceSwitcher';
