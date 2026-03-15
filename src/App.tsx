@@ -14,6 +14,7 @@ import Reports from "./pages/Reports";
 import BankAccounts from "./pages/BankAccounts";
 import Transactions from "./pages/Transactions";
 import Settings from "./pages/Settings";
+import ActivityLog from "./pages/ActivityLog";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 
@@ -48,6 +49,7 @@ function ProtectedRoutes() {
             <Route path="/reports" element={<Reports />} />
             <Route path="/bank-accounts" element={<BankAccounts />} />
             <Route path="/transactions" element={<Transactions />} />
+            <Route path="/activity" element={<ActivityLog />} />
             <Route path="/settings" element={<Settings />} />
             <Route path="*" element={<NotFound />} />
           </Routes>

@@ -10,6 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { getCategoryIcon } from '@/lib/category-icons';
+import LastModifiedBadge from '@/components/LastModifiedBadge';
 
 export default function Transactions() {
   const { transactions, bills, categories, addTransaction, deleteTransaction } = useFinance();
@@ -157,6 +158,7 @@ export default function Transactions() {
                     <CatIcon size={10} />
                     {entry.category} · {format(parseDateOnly(entry.date), 'dd/MM/yyyy')}
                   </div>
+                  {entry.type === 'transaction' && <LastModifiedBadge entityType="transaction" entityId={entry.id} />}
                 </div>
                 <span className="font-bold mono shrink-0">{formatCurrency(entry.amount)}</span>
                 {entry.type === 'transaction' && (

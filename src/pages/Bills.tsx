@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import BillFormDialog from '@/components/BillFormDialog';
 import { getCategoryIcon } from '@/lib/category-icons';
+import LastModifiedBadge from '@/components/LastModifiedBadge';
 
 const statusColor: Record<string, string> = {
   paid: 'status-paid',
@@ -105,6 +106,7 @@ export default function BillsPage() {
             <span>{TYPE_LABELS[b.type]}</span>
             {b.installment && <span>Parcela {b.currentInstallment}/{b.installmentCount}</span>}
           </div>
+          <LastModifiedBadge entityType="bill" entityId={b.id} />
         </div>
         <div className="flex items-center gap-3">
           <span className="font-bold mono text-lg">{formatCurrency(b.amount)}</span>
