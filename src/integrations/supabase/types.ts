@@ -272,6 +272,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      auth_user_email: { Args: never; Returns: string }
       can_access_user_data: {
         Args: { _accessor_id: string; _user_id: string }
         Returns: boolean
