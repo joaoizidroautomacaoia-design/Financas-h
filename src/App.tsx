@@ -14,6 +14,7 @@ import Reports from "./pages/Reports";
 import BankAccounts from "./pages/BankAccounts";
 import Transactions from "./pages/Transactions";
 import Settings from "./pages/Settings";
+import ActivityLog from "./pages/ActivityLog";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 
