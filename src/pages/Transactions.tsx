@@ -158,6 +158,7 @@ export default function Transactions() {
                     <CatIcon size={10} />
                     {entry.category} · {format(parseDateOnly(entry.date), 'dd/MM/yyyy')}
                   </div>
+                  {entry.type === 'transaction' && <LastModifiedBadge entityType="transaction" entityId={entry.id} />}
                 </div>
                 <span className="font-bold mono shrink-0">{formatCurrency(entry.amount)}</span>
                 {entry.type === 'transaction' && (

@@ -106,6 +106,7 @@ export default function BillsPage() {
             <span>{TYPE_LABELS[b.type]}</span>
             {b.installment && <span>Parcela {b.currentInstallment}/{b.installmentCount}</span>}
           </div>
+          <LastModifiedBadge entityType="bill" entityId={b.id} />
         </div>
         <div className="flex items-center gap-3">
           <span className="font-bold mono text-lg">{formatCurrency(b.amount)}</span>
