@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import BillFormDialog from '@/components/BillFormDialog';
 import { getCategoryIcon } from '@/lib/category-icons';
+import LastModifiedBadge from '@/components/LastModifiedBadge';
 
 const statusColor: Record<string, string> = {
   paid: 'status-paid',
