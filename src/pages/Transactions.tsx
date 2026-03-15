@@ -10,6 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { getCategoryIcon } from '@/lib/category-icons';
+import LastModifiedBadge from '@/components/LastModifiedBadge';
 
 export default function Transactions() {
   const { transactions, bills, categories, addTransaction, deleteTransaction } = useFinance();
