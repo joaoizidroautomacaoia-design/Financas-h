@@ -14,6 +14,48 @@ export type Database = {
   }
   public: {
     Tables: {
+      activity_log: {
+        Row: {
+          action: string
+          created_at: string
+          details: string | null
+          entity_id: string | null
+          entity_name: string
+          entity_type: string
+          id: string
+          user_display_name: string
+          user_email: string
+          user_id: string
+          workspace_id: string
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          details?: string | null
+          entity_id?: string | null
+          entity_name?: string
+          entity_type: string
+          id?: string
+          user_display_name?: string
+          user_email?: string
+          user_id: string
+          workspace_id: string
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          details?: string | null
+          entity_id?: string | null
+          entity_name?: string
+          entity_type?: string
+          id?: string
+          user_display_name?: string
+          user_email?: string
+          user_id?: string
+          workspace_id?: string
+        }
+        Relationships: []
+      }
       bank_accounts: {
         Row: {
           balance: number
