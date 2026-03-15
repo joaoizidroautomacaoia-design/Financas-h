@@ -49,6 +49,7 @@ function ProtectedRoutes() {
             <Route path="/reports" element={<Reports />} />
             <Route path="/bank-accounts" element={<BankAccounts />} />
             <Route path="/transactions" element={<Transactions />} />
+            <Route path="/activity" element={<ActivityLog />} />
             <Route path="/settings" element={<Settings />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
