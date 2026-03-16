@@ -313,7 +313,7 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
   }, [transactions, log]);
 
   return (
-    <FinanceContext.Provider value={{ bills, bankAccounts, categories, deposits, transactions, loading, addBill, updateBill, updateBillGroup, deleteBill, deleteBillGroup, markAsPaid, addBankAccount, updateBankAccount, deleteBankAccount, addCategory, deleteCategory, addDeposit, deleteDeposit, addTransaction, deleteTransaction }}>
+    <FinanceContext.Provider value={{ bills, bankAccounts, categories, deposits, transactions, loading, addBill, updateBill, updateBillGroup, deleteBill, deleteBillGroup, markAsPaid, addBankAccount, updateBankAccount, deleteBankAccount, addCategory, deleteCategory, addDeposit, deleteDeposit, addTransaction, updateTransaction, deleteTransaction }}>
       {children}
     </FinanceContext.Provider>
   );

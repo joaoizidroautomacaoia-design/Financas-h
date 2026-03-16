@@ -1,10 +1,10 @@
 import { useState, useMemo } from 'react';
 import { useFinance } from '@/contexts/FinanceContext';
-import { getBillStatus } from '@/types/finance';
+import { getBillStatus, Transaction } from '@/types/finance';
 import { format, startOfMonth, endOfMonth } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { parseDateOnly, todayDateOnly } from '@/lib/date';
-import { Plus, Trash2, ShoppingBag, Receipt, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Plus, Trash2, Pencil, ShoppingBag, Receipt, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -13,9 +13,10 @@ import { getCategoryIcon } from '@/lib/category-icons';
 import LastModifiedBadge from '@/components/LastModifiedBadge';
 
 export default function Transactions() {
-  const { transactions, bills, categories, addTransaction, deleteTransaction } = useFinance();
+  const { transactions, bills, categories, addTransaction, updateTransaction, deleteTransaction } = useFinance();
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [open, setOpen] = useState(false);
+  const [editingTx, setEditingTx] = useState<Transaction | null>(null);
   const [desc, setDesc] = useState('');
   const [amount, setAmount] = useState('');
   const [category, setCategory] = useState('');
@@ -60,10 +61,43 @@ export default function Transactions() {
 
   const totalMonth = useMemo(() => allEntries.reduce((s, e) => s + e.amount, 0), [allEntries]);
 
-  const handleAdd = () => {
-    if (!desc || !amount || !category || !date) return;
-    addTransaction({ description: desc, amount: parseFloat(amount), category, transactionDate: date, notes });
+  const resetForm = () => {
     setDesc(''); setAmount(''); setCategory(''); setDate(todayDateOnly()); setNotes('');
+    setEditingTx(null);
+  };
+
+  const openNew = () => {
+    resetForm();
+    setOpen(true);
+  };
+
+  const openEdit = (entry: typeof allEntries[0]) => {
+    const tx = transactions.find(t => t.id === entry.id);
+    if (!tx) return;
+    setEditingTx(tx);
+    setDesc(tx.description);
+    setAmount(tx.amount.toString());
+    setCategory(tx.category);
+    setDate(tx.transactionDate);
+    setNotes(tx.notes);
+    setOpen(true);
+  };
+
+  const handleSubmit = () => {
+    if (!desc || !amount || !category || !date) return;
+    if (editingTx) {
+      updateTransaction({
+        id: editingTx.id,
+        description: desc,
+        amount: parseFloat(amount),
+        category,
+        transactionDate: date,
+        notes,
+      });
+    } else {
+      addTransaction({ description: desc, amount: parseFloat(amount), category, transactionDate: date, notes });
+    }
+    resetForm();
     setOpen(false);
   };
 
@@ -74,38 +108,42 @@ export default function Transactions() {
     <div className="space-y-6 animate-fade-in">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold tracking-tight">Transações</h1>
-        <Dialog open={open} onOpenChange={setOpen}>
-          <DialogTrigger asChild>
-            <Button size="sm" className="gap-1.5 bg-gradient-to-r from-primary to-primary-glow hover:opacity-90 transition-opacity"><Plus size={16} /> Nova Transação</Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader><DialogTitle>Registrar Transação</DialogTitle></DialogHeader>
-            <div className="space-y-3 mt-2">
-              <Input placeholder="Descrição (ex: Padaria)" value={desc} onChange={e => setDesc(e.target.value)} />
-              <Input type="number" placeholder="Valor" value={amount} onChange={e => setAmount(e.target.value)} step="0.01" />
-              <Select value={category} onValueChange={setCategory}>
-                <SelectTrigger><SelectValue placeholder="Categoria" /></SelectTrigger>
-                <SelectContent>
-                  {categories.map(c => {
-                    const CatIcon = getCategoryIcon(c.name);
-                    return (
-                      <SelectItem key={c.id} value={c.name}>
-                        <div className="flex items-center gap-2">
-                          <CatIcon size={14} style={{ color: c.color }} />
-                          {c.name}
-                        </div>
-                      </SelectItem>
-                    );
-                  })}
-                </SelectContent>
-              </Select>
-              <Input type="date" value={date} onChange={e => setDate(e.target.value)} />
-              <Input placeholder="Observação (opcional)" value={notes} onChange={e => setNotes(e.target.value)} />
-              <Button onClick={handleAdd} className="w-full bg-gradient-to-r from-primary to-primary-glow hover:opacity-90">Adicionar</Button>
-            </div>
-          </DialogContent>
-        </Dialog>
+        <Button size="sm" onClick={openNew} className="gap-1.5 bg-gradient-to-r from-primary to-primary-glow hover:opacity-90 transition-opacity">
+          <Plus size={16} /> Nova Transação
+        </Button>
       </div>
+
+      {/* Transaction form dialog */}
+      <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) resetForm(); }}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>{editingTx ? 'Editar Transação' : 'Registrar Transação'}</DialogTitle></DialogHeader>
+          <div className="space-y-3 mt-2">
+            <Input placeholder="Descrição (ex: Padaria)" value={desc} onChange={e => setDesc(e.target.value)} />
+            <Input type="number" placeholder="Valor" value={amount} onChange={e => setAmount(e.target.value)} step="0.01" />
+            <Select value={category} onValueChange={setCategory}>
+              <SelectTrigger><SelectValue placeholder="Categoria" /></SelectTrigger>
+              <SelectContent>
+                {categories.map(c => {
+                  const CatIcon = getCategoryIcon(c.name);
+                  return (
+                    <SelectItem key={c.id} value={c.name}>
+                      <div className="flex items-center gap-2">
+                        <CatIcon size={14} style={{ color: c.color }} />
+                        {c.name}
+                      </div>
+                    </SelectItem>
+                  );
+                })}
+              </SelectContent>
+            </Select>
+            <Input type="date" value={date} onChange={e => setDate(e.target.value)} />
+            <Input placeholder="Observação (opcional)" value={notes} onChange={e => setNotes(e.target.value)} />
+            <Button onClick={handleSubmit} className="w-full bg-gradient-to-r from-primary to-primary-glow hover:opacity-90">
+              {editingTx ? 'Salvar' : 'Adicionar'}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Month navigation */}
       <div className="glass-card-hover p-4">
@@ -162,9 +200,14 @@ export default function Transactions() {
                 </div>
                 <span className="font-bold mono shrink-0">{formatCurrency(entry.amount)}</span>
                 {entry.type === 'transaction' && (
-                  <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10 opacity-0 group-hover:opacity-100 transition-opacity" onClick={() => deleteTransaction(entry.id)}>
-                    <Trash2 size={14} />
-                  </Button>
+                  <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-accent" onClick={() => openEdit(entry)} title="Editar">
+                      <Pencil size={14} />
+                    </Button>
+                    <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10" onClick={() => deleteTransaction(entry.id)}>
+                      <Trash2 size={14} />
+                    </Button>
+                  </div>
                 )}
               </div>
             );
