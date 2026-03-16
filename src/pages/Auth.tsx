@@ -14,6 +14,23 @@ export default function AuthPage() {
   const [displayName, setDisplayName] = useState('');
   const [loading, setLoading] = useState(false);
 
+  const [forgotMode, setForgotMode] = useState(false);
+
+  const handleForgotPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email) { toast.error('Digite seu email'); return; }
+    setLoading(true);
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/reset-password`,
+    });
+    if (error) {
+      toast.error(error.message);
+    } else {
+      toast.success('Email de recuperação enviado! Verifique sua caixa de entrada.');
+    }
+    setLoading(false);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
