@@ -6,7 +6,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
-import { LogOut, Lock, UserPlus, Trash2, Mail, Clock, CheckCircle2, Settings as SettingsIcon } from 'lucide-react';
+import { LogOut, Lock, UserPlus, Trash2, Mail, Clock, CheckCircle2, Settings as SettingsIcon, Bell } from 'lucide-react';
+import NotificationToggle from '@/components/NotificationToggle';
 
 interface Dependent {
   id: string;
