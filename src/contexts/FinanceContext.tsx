@@ -28,6 +28,7 @@ interface FinanceContextType {
   addDeposit: (deposit: Omit<BankDeposit, 'id'>) => void;
   deleteDeposit: (id: string) => void;
   addTransaction: (t: Omit<Transaction, 'id'>) => void;
+  updateTransaction: (t: Transaction) => void;
   deleteTransaction: (id: string) => void;
 }
 
