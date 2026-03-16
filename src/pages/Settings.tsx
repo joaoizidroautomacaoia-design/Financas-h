@@ -6,7 +6,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
-import { LogOut, Lock, UserPlus, Trash2, Mail, Clock, CheckCircle2, Settings as SettingsIcon } from 'lucide-react';
+import { LogOut, Lock, UserPlus, Trash2, Mail, Clock, CheckCircle2, Settings as SettingsIcon, Bell } from 'lucide-react';
+import NotificationToggle from '@/components/NotificationToggle';
 
 interface Dependent {
   id: string;
@@ -120,6 +121,18 @@ export default function SettingsPage() {
           <h1 className="text-2xl font-bold gradient-text">Configurações</h1>
           <p className="text-sm text-muted-foreground">{user?.email}</p>
         </div>
+      </div>
+
+      {/* Notifications */}
+      <div className="glass-card p-6 space-y-4">
+        <h2 className="text-lg font-semibold flex items-center gap-2">
+          <Bell size={20} className="text-primary" />
+          Notificações
+        </h2>
+        <p className="text-sm text-muted-foreground">
+          Receba alertas quando suas contas estiverem próximas do vencimento ou atrasadas.
+        </p>
+        <NotificationToggle />
       </div>
 
       {/* Change Password */}

@@ -1,5 +1,6 @@
 import { useFinance } from '@/contexts/FinanceContext';
 import { getBillStatus, STATUS_LABELS } from '@/types/finance';
+import { useNotifications } from '@/hooks/useNotifications';
 import { AlertTriangle, CheckCircle2, Clock, TrendingUp, Wallet, Landmark, Receipt, Sparkles } from 'lucide-react';
 import { useMemo } from 'react';
 import { format, isThisMonth, differenceInDays } from 'date-fns';
@@ -9,6 +10,7 @@ import { getCategoryIcon, getCategoryColor } from '@/lib/category-icons';
 
 export default function Dashboard() {
   const { bills, bankAccounts, transactions, categories } = useFinance();
+  useNotifications(bills);
 
   const stats = useMemo(() => {
     const today = new Date();
