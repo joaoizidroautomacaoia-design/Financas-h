@@ -10,6 +10,7 @@ import { getCategoryIcon, getCategoryColor } from '@/lib/category-icons';
 
 export default function Dashboard() {
   const { bills, bankAccounts, transactions, categories } = useFinance();
+  useNotifications(bills);
 
   const stats = useMemo(() => {
     const today = new Date();
