@@ -32,6 +32,8 @@ export default function CalendarPage() {
   const end = endOfMonth(currentMonth);
   const days = eachDayOfInterval({ start, end });
   const startWeekday = getDay(start);
+  const totalCells = startWeekday + days.length;
+  const rows = Math.ceil(totalCells / 7);
 
   const billsByDate = useMemo(() => {
     const map: Record<string, Bill[]> = {};
@@ -67,9 +69,9 @@ export default function CalendarPage() {
     <div className="space-y-6 animate-fade-in">
       <h1 className="text-2xl font-bold tracking-tight">Calendário</h1>
 
-      <div className="glass-card p-5">
+      <div className="glass-card p-3 sm:p-5">
         {/* Month navigation */}
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center justify-between mb-4">
           <Button variant="ghost" size="icon" onClick={() => setCurrentMonth(subMonths(currentMonth, 1))}>
             <ChevronLeft size={18} />
           </Button>
@@ -82,14 +84,17 @@ export default function CalendarPage() {
         </div>
 
         {/* Day headers */}
-        <div className="grid grid-cols-7 gap-1 mb-2">
+        <div className="grid grid-cols-7 gap-px mb-1">
           {['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'].map(d => (
-            <div key={d} className="text-center text-xs font-medium text-muted-foreground py-2">{d}</div>
+            <div key={d} className="text-center text-xs font-medium text-muted-foreground py-1">{d}</div>
           ))}
         </div>
 
-        {/* Days grid */}
-        <div className="grid grid-cols-7 gap-1">
+        {/* Days grid — uses dynamic row height to fill available space */}
+        <div
+          className="grid grid-cols-7 gap-px"
+          style={{ gridTemplateRows: `repeat(${rows}, minmax(0, 1fr))` }}
+        >
           {Array.from({ length: startWeekday }).map((_, i) => <div key={`e${i}`} />)}
           {days.map(day => {
             const key = format(day, 'yyyy-MM-dd');
@@ -106,7 +111,7 @@ export default function CalendarPage() {
               <button
                 key={key}
                 onClick={() => setSelectedDay(day)}
-                className={`relative aspect-square flex flex-col items-center justify-center rounded-lg text-sm transition-colors hover:bg-accent ${
+                className={`relative flex flex-col items-center justify-center rounded-md text-sm transition-colors hover:bg-accent py-1.5 ${
                   isToday ? 'ring-1 ring-primary' : ''
                 } ${(dayBills.length > 0 || txCount > 0) ? 'cursor-pointer' : ''}`}
               >
@@ -128,7 +133,7 @@ export default function CalendarPage() {
         </div>
 
         {/* Legend */}
-        <div className="flex flex-wrap gap-4 mt-4 pt-4 border-t border-border">
+        <div className="flex flex-wrap gap-3 mt-3 pt-3 border-t border-border">
           {[
             { label: 'Pago', color: statusDotColor.paid },
             { label: 'Atrasado', color: statusDotColor.overdue },

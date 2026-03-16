@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -13,6 +14,23 @@ export default function AuthPage() {
   const [password, setPassword] = useState('');
   const [displayName, setDisplayName] = useState('');
   const [loading, setLoading] = useState(false);
+
+  const [forgotMode, setForgotMode] = useState(false);
+
+  const handleForgotPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email) { toast.error('Digite seu email'); return; }
+    setLoading(true);
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/reset-password`,
+    });
+    if (error) {
+      toast.error(error.message);
+    } else {
+      toast.success('Email de recuperação enviado! Verifique sua caixa de entrada.');
+    }
+    setLoading(false);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -95,15 +113,50 @@ export default function AuthPage() {
           </Button>
         </form>
 
-        <div className="text-center">
-          <button
-            type="button"
-            onClick={() => setIsLogin(!isLogin)}
-            className="text-sm text-muted-foreground hover:text-primary transition-colors duration-200"
-          >
-            {isLogin ? 'Não tem conta? Criar conta' : 'Já tem conta? Entrar'}
-          </button>
-        </div>
+        {isLogin && !forgotMode && (
+          <div className="text-center">
+            <button
+              type="button"
+              onClick={() => setForgotMode(true)}
+              className="text-sm text-muted-foreground hover:text-primary transition-colors duration-200"
+            >
+              Esqueceu a senha?
+            </button>
+          </div>
+        )}
+
+        {forgotMode && (
+          <div className="space-y-4 animate-fade-in">
+            <p className="text-sm text-muted-foreground text-center">Digite seu email para receber o link de recuperação</p>
+            <form onSubmit={handleForgotPassword} className="space-y-3">
+              <div className="relative">
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={16} />
+                <Input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="seu@email.com" className="pl-10" required />
+              </div>
+              <Button type="submit" className="w-full gap-2 bg-gradient-to-r from-primary to-primary-glow hover:opacity-90 transition-opacity" disabled={loading}>
+                {loading ? 'Aguarde...' : 'Enviar Link'}
+                {!loading && <ArrowRight size={16} />}
+              </Button>
+            </form>
+            <div className="text-center">
+              <button type="button" onClick={() => setForgotMode(false)} className="text-sm text-muted-foreground hover:text-primary transition-colors duration-200">
+                Voltar ao login
+              </button>
+            </div>
+          </div>
+        )}
+
+        {!forgotMode && (
+          <div className="text-center">
+            <button
+              type="button"
+              onClick={() => setIsLogin(!isLogin)}
+              className="text-sm text-muted-foreground hover:text-primary transition-colors duration-200"
+            >
+              {isLogin ? 'Não tem conta? Criar conta' : 'Já tem conta? Entrar'}
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );
