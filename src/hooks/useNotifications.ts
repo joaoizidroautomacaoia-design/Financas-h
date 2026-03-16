@@ -36,9 +36,7 @@ export function useNotifications(bills: Bill[]) {
           const notification = new Notification('FinControl - Alerta de Vencimento', {
             body: message,
             icon: '/pwa-192x192.png',
-            badge: '/pwa-192x192.png',
             tag: notifKey,
-            renotify: false,
           });
           notification.onclick = () => {
             window.focus();
