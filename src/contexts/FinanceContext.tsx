@@ -294,6 +294,16 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
     }
   }, [user, log]);
 
+  const updateTransaction = useCallback(async (t: Transaction) => {
+    const { error } = await supabase.from('transactions').update({
+      description: t.description, amount: t.amount, category: t.category,
+      transaction_date: t.transactionDate, notes: t.notes,
+    }).eq('id', t.id);
+    if (error) { toast.error('Erro ao atualizar transação'); return; }
+    setTransactions(prev => prev.map(x => x.id === t.id ? t : x));
+    log('update', 'transaction', t.description, t.id);
+  }, [log]);
+
   const deleteTransaction = useCallback(async (id: string) => {
     const tx = transactions.find(t => t.id === id);
     const { error } = await supabase.from('transactions').delete().eq('id', id);
