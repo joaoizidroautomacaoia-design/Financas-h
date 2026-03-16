@@ -36,8 +36,8 @@ export default function NotificationToggle() {
 
   if (permission === 'granted') {
     return (
-      <div className="flex items-center gap-3 p-3 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-sm">
-        <BellRing size={16} className="text-emerald-500" />
+      <div className="flex items-center gap-3 p-3 rounded-lg bg-primary/10 border border-primary/20 text-sm">
+        <BellRing size={16} className="text-primary" />
         <div>
           <p className="font-medium text-foreground">Notificações ativas</p>
           <p className="text-xs text-muted-foreground">Você será notificado quando contas estiverem próximas do vencimento ou atrasadas.</p>
