@@ -63,6 +63,14 @@ export interface Loan {
   paidDate?: string;
 }
 
+export interface LoanPayment {
+  id: string;
+  loanId: string;
+  amount: number;
+  paymentDate: string;
+  notes: string;
+}
+
 export function getBillStatus(bill: Bill): BillStatus {
   if (bill.paid) return 'paid';
   const today = new Date();
