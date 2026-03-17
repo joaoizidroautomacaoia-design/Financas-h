@@ -356,6 +356,15 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
     log('delete', 'loan', loan?.personName || '', id);
   }, [loans, log]);
 
+  const markLoanAsPaid = useCallback(async (id: string) => {
+    const now = todayDateOnly();
+    const loan = loans.find(l => l.id === id);
+    const { error } = await supabase.from('loans').update({ paid: true, paid_date: now }).eq('id', id);
+    if (error) { toast.error('Erro ao marcar como pago'); return; }
+    setLoans(prev => prev.map(l => l.id === id ? { ...l, paid: true, paidDate: now } : l));
+    log('paid', 'loan', loan?.personName || '', id);
+  }, [loans, log]);
+
   const addLoanPayment = useCallback(async (p: Omit<LoanPayment, 'id'>) => {
     if (!user) return;
     const { data, error } = await supabase.from('loan_payments').insert({
