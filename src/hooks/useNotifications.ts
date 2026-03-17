@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
-import { Bill, Loan, getBillStatus } from '@/types/finance';
+import { Bill, Loan, LoanPayment, getBillStatus } from '@/types/finance';
 
-export function useNotifications(bills: Bill[], loans: Loan[] = []) {
+export function useNotifications(bills: Bill[], loans: Loan[] = [], loanPayments: LoanPayment[] = []) {
   const notifiedRef = useRef<Set<string>>(new Set());
 
   useEffect(() => {
@@ -38,13 +38,16 @@ export function useNotifications(bills: Bill[], loans: Loan[] = []) {
       const loanNotifKey = `loans-daily-${todayKey}`;
       if (!notifiedRef.current.has(loanNotifKey)) {
         notifiedRef.current.add(loanNotifKey);
-        const total = unpaidLoans.reduce((s, l) => s + l.amount, 0);
+        const total = unpaidLoans.reduce((s, l) => {
+          const paid = loanPayments.filter(p => p.loanId === l.id).reduce((a, p) => a + p.amount, 0);
+          return s + Math.max(0, l.amount - paid);
+        }, 0);
         const names = unpaidLoans.map(l => l.personName).join(', ');
         const message = `💰 Você tem ${unpaidLoans.length} empréstimo(s) pendente(s) totalizando R$ ${total.toFixed(2)}.\nDe: ${names}`;
         sendNotification('FinControl - Empréstimos Pendentes', message, loanNotifKey);
       }
     }
-  }, [bills, loans]);
+  }, [bills, loans, loanPayments]);
 }
 
 function sendNotification(title: string, body: string, tag: string) {

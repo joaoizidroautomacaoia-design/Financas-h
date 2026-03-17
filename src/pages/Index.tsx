@@ -9,8 +9,8 @@ import { parseDateOnly } from '@/lib/date';
 import { getCategoryIcon, getCategoryColor } from '@/lib/category-icons';
 
 export default function Dashboard() {
-  const { bills, bankAccounts, transactions, categories, loans } = useFinance();
-  useNotifications(bills, loans);
+  const { bills, bankAccounts, transactions, categories, loans, loanPayments } = useFinance();
+  useNotifications(bills, loans, loanPayments);
 
   const stats = useMemo(() => {
     const today = new Date();
@@ -252,22 +252,40 @@ export default function Dashboard() {
             </div>
             <h2 className="font-semibold">Empréstimos Pendentes</h2>
             <span className="ml-auto text-lg font-bold mono text-status-overdue">
-              {formatCurrency(loans.filter(l => !l.paid).reduce((s, l) => s + l.amount, 0))}
+              {formatCurrency(loans.filter(l => !l.paid).reduce((s, l) => {
+                const paid = loanPayments.filter(p => p.loanId === l.id).reduce((a, p) => a + p.amount, 0);
+                return s + Math.max(0, l.amount - paid);
+              }, 0))}
             </span>
           </div>
           <div className="space-y-2 stagger-fade">
-            {loans.filter(l => !l.paid).map(loan => (
-              <div key={loan.id} className="flex items-center justify-between py-2.5 px-3 rounded-lg status-overdue border text-sm">
-                <div className="flex items-center gap-2.5">
-                  <HandCoins size={14} />
-                  <div>
-                    <p className="font-medium">{loan.personName}</p>
-                    <p className="text-xs opacity-70">Desde {format(parseDateOnly(loan.loanDate), 'dd/MM/yyyy')}</p>
+            {loans.filter(l => !l.paid).map(loan => {
+              const totalPaid = loanPayments.filter(p => p.loanId === loan.id).reduce((a, p) => a + p.amount, 0);
+              const remaining = Math.max(0, loan.amount - totalPaid);
+              const pct = loan.amount > 0 ? (totalPaid / loan.amount) * 100 : 0;
+              return (
+                <div key={loan.id} className="py-2.5 px-3 rounded-lg status-overdue border text-sm">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2.5">
+                      <HandCoins size={14} />
+                      <div>
+                        <p className="font-medium">{loan.personName}</p>
+                        <p className="text-xs opacity-70">Desde {format(parseDateOnly(loan.loanDate), 'dd/MM/yyyy')}</p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <span className="font-semibold mono">{formatCurrency(remaining)}</span>
+                      {totalPaid > 0 && <p className="text-xs opacity-70">de {formatCurrency(loan.amount)}</p>}
+                    </div>
                   </div>
+                  {totalPaid > 0 && (
+                    <div className="mt-2 h-1.5 bg-muted/50 rounded-full overflow-hidden">
+                      <div className="h-full bg-status-paid rounded-full transition-all" style={{ width: `${pct}%` }} />
+                    </div>
+                  )}
                 </div>
-                <span className="font-semibold mono">{formatCurrency(loan.amount)}</span>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       )}
