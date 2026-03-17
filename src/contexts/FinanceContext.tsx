@@ -320,8 +320,47 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
     log('delete', 'transaction', tx?.description || '', id);
   }, [transactions, log]);
 
+  const addLoan = useCallback(async (l: Omit<Loan, 'id'>) => {
+    if (!user) return;
+    const { data, error } = await supabase.from('loans').insert({
+      person_name: l.personName, amount: l.amount, loan_date: l.loanDate,
+      notes: l.notes, paid: l.paid, user_id: effectiveUserId!,
+    }).select().single();
+    if (error) { toast.error('Erro ao adicionar empréstimo'); return; }
+    if (data) {
+      setLoans(prev => [{ id: data.id, personName: (data as any).person_name, amount: Number(data.amount), loanDate: (data as any).loan_date, notes: data.notes || '', paid: data.paid, paidDate: (data as any).paid_date || undefined }, ...prev]);
+      log('create', 'loan', l.personName, data.id);
+    }
+  }, [user, log]);
+
+  const updateLoan = useCallback(async (l: Loan) => {
+    const { error } = await supabase.from('loans').update({
+      person_name: l.personName, amount: l.amount, loan_date: l.loanDate, notes: l.notes,
+    }).eq('id', l.id);
+    if (error) { toast.error('Erro ao atualizar empréstimo'); return; }
+    setLoans(prev => prev.map(x => x.id === l.id ? l : x));
+    log('update', 'loan', l.personName, l.id);
+  }, [log]);
+
+  const deleteLoan = useCallback(async (id: string) => {
+    const loan = loans.find(l => l.id === id);
+    const { error } = await supabase.from('loans').delete().eq('id', id);
+    if (error) { toast.error('Erro ao deletar empréstimo'); return; }
+    setLoans(prev => prev.filter(x => x.id !== id));
+    log('delete', 'loan', loan?.personName || '', id);
+  }, [loans, log]);
+
+  const markLoanAsPaid = useCallback(async (id: string) => {
+    const now = todayDateOnly();
+    const loan = loans.find(l => l.id === id);
+    const { error } = await supabase.from('loans').update({ paid: true, paid_date: now }).eq('id', id);
+    if (error) { toast.error('Erro ao marcar como pago'); return; }
+    setLoans(prev => prev.map(l => l.id === id ? { ...l, paid: true, paidDate: now } : l));
+    log('paid', 'loan', loan?.personName || '', id);
+  }, [loans, log]);
+
   return (
-    <FinanceContext.Provider value={{ bills, bankAccounts, categories, deposits, transactions, loading, addBill, updateBill, updateBillGroup, deleteBill, deleteBillGroup, markAsPaid, addBankAccount, updateBankAccount, deleteBankAccount, addCategory, deleteCategory, addDeposit, deleteDeposit, addTransaction, updateTransaction, deleteTransaction }}>
+    <FinanceContext.Provider value={{ bills, bankAccounts, categories, deposits, transactions, loans, loading, addBill, updateBill, updateBillGroup, deleteBill, deleteBillGroup, markAsPaid, addBankAccount, updateBankAccount, deleteBankAccount, addCategory, deleteCategory, addDeposit, deleteDeposit, addTransaction, updateTransaction, deleteTransaction, addLoan, updateLoan, deleteLoan, markLoanAsPaid }}>
       {children}
     </FinanceContext.Provider>
   );
