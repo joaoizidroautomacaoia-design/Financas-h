@@ -9,7 +9,7 @@ import { parseDateOnly } from '@/lib/date';
 import { getCategoryIcon, getCategoryColor } from '@/lib/category-icons';
 
 export default function Dashboard() {
-  const { bills, bankAccounts, transactions, categories, loans } = useFinance();
+  const { bills, bankAccounts, transactions, categories, loans, loanPayments } = useFinance();
   useNotifications(bills, loans);
 
   const stats = useMemo(() => {
