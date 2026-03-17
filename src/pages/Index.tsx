@@ -9,8 +9,8 @@ import { parseDateOnly } from '@/lib/date';
 import { getCategoryIcon, getCategoryColor } from '@/lib/category-icons';
 
 export default function Dashboard() {
-  const { bills, bankAccounts, transactions, categories } = useFinance();
-  useNotifications(bills);
+  const { bills, bankAccounts, transactions, categories, loans } = useFinance();
+  useNotifications(bills, loans);
 
   const stats = useMemo(() => {
     const today = new Date();
