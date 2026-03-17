@@ -91,6 +91,7 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
     if (accountsRes.data) setBankAccounts(accountsRes.data.map(a => ({ id: a.id, name: a.name, balance: Number(a.balance) })));
     if (depositsRes.data) setDeposits(depositsRes.data.map(d => ({ id: d.id, bankAccountId: d.bank_account_id, amount: Number(d.amount), depositDate: d.deposit_date, description: d.description || '' })));
     if (transactionsRes.data) setTransactions(transactionsRes.data.map(t => ({ id: t.id, description: t.description, amount: Number(t.amount), category: t.category, transactionDate: t.transaction_date, notes: t.notes || '' })));
+    if (loansRes.data) setLoans(loansRes.data.map((l: any) => ({ id: l.id, personName: l.person_name, amount: Number(l.amount), loanDate: l.loan_date, notes: l.notes || '', paid: l.paid, paidDate: l.paid_date || undefined })));
     if (categoriesRes.data) {
       if (categoriesRes.data.length === 0) {
         await seedCategories();
