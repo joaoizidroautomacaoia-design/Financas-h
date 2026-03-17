@@ -82,13 +82,14 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
   const fetchAll = async () => {
     setLoading(true);
     const uid = effectiveUserId!;
-    const [billsRes, accountsRes, categoriesRes, depositsRes, transactionsRes, loansRes] = await Promise.all([
+    const [billsRes, accountsRes, categoriesRes, depositsRes, transactionsRes, loansRes, loanPaymentsRes] = await Promise.all([
       supabase.from('bills').select('*').eq('user_id', uid).order('due_date'),
       supabase.from('bank_accounts').select('*').eq('user_id', uid).order('created_at'),
       supabase.from('categories').select('*').eq('user_id', uid).order('created_at'),
       supabase.from('bank_deposits').select('*').eq('user_id', uid).order('deposit_date'),
       supabase.from('transactions').select('*').eq('user_id', uid).order('transaction_date', { ascending: false }),
       supabase.from('loans').select('*').eq('user_id', uid).order('created_at', { ascending: false }),
+      supabase.from('loan_payments').select('*').eq('user_id', uid).order('payment_date', { ascending: false }),
     ]);
 
     if (billsRes.data) setBills(billsRes.data.map(mapBillFromDb));
