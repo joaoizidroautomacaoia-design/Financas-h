@@ -356,17 +356,29 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
     log('delete', 'loan', loan?.personName || '', id);
   }, [loans, log]);
 
-  const markLoanAsPaid = useCallback(async (id: string) => {
-    const now = todayDateOnly();
-    const loan = loans.find(l => l.id === id);
-    const { error } = await supabase.from('loans').update({ paid: true, paid_date: now }).eq('id', id);
-    if (error) { toast.error('Erro ao marcar como pago'); return; }
-    setLoans(prev => prev.map(l => l.id === id ? { ...l, paid: true, paidDate: now } : l));
-    log('paid', 'loan', loan?.personName || '', id);
-  }, [loans, log]);
+  const addLoanPayment = useCallback(async (p: Omit<LoanPayment, 'id'>) => {
+    if (!user) return;
+    const { data, error } = await supabase.from('loan_payments').insert({
+      loan_id: p.loanId, amount: p.amount, payment_date: p.paymentDate,
+      notes: p.notes, user_id: effectiveUserId!,
+    }).select().single();
+    if (error) { toast.error('Erro ao registrar pagamento'); return; }
+    if (data) {
+      setLoanPayments(prev => [{ id: data.id, loanId: (data as any).loan_id, amount: Number(data.amount), paymentDate: (data as any).payment_date, notes: data.notes || '' }, ...prev]);
+      const loan = loans.find(l => l.id === p.loanId);
+      log('create', 'loan', `Pagamento parcial - ${loan?.personName || ''}`, data.id);
+      toast.success('Pagamento registrado!');
+    }
+  }, [user, loans, log]);
+
+  const deleteLoanPayment = useCallback(async (id: string) => {
+    const { error } = await supabase.from('loan_payments').delete().eq('id', id);
+    if (error) { toast.error('Erro ao deletar pagamento'); return; }
+    setLoanPayments(prev => prev.filter(x => x.id !== id));
+  }, []);
 
   return (
-    <FinanceContext.Provider value={{ bills, bankAccounts, categories, deposits, transactions, loans, loading, addBill, updateBill, updateBillGroup, deleteBill, deleteBillGroup, markAsPaid, addBankAccount, updateBankAccount, deleteBankAccount, addCategory, deleteCategory, addDeposit, deleteDeposit, addTransaction, updateTransaction, deleteTransaction, addLoan, updateLoan, deleteLoan, markLoanAsPaid }}>
+    <FinanceContext.Provider value={{ bills, bankAccounts, categories, deposits, transactions, loans, loanPayments, loading, addBill, updateBill, updateBillGroup, deleteBill, deleteBillGroup, markAsPaid, addBankAccount, updateBankAccount, deleteBankAccount, addCategory, deleteCategory, addDeposit, deleteDeposit, addTransaction, updateTransaction, deleteTransaction, addLoan, updateLoan, deleteLoan, markLoanAsPaid, addLoanPayment, deleteLoanPayment }}>
       {children}
     </FinanceContext.Provider>
   );
