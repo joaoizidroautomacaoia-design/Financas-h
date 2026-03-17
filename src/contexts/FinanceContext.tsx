@@ -59,6 +59,7 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
   const [categories, setCategories] = useState<Category[]>([]);
   const [deposits, setDeposits] = useState<BankDeposit[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [loans, setLoans] = useState<Loan[]>([]);
   const [loading, setLoading] = useState(true);
 
   const effectiveUserId = activeWorkspace?.id || user?.id;
