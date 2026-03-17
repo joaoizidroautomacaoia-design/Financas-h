@@ -31,6 +31,7 @@ const ENTITY_LABELS: Record<EntityType, string> = {
   deposit: 'recebimento',
   transaction: 'transação',
   category: 'categoria',
+  loan: 'empréstimo',
 };
 
 export function getActionLabel(action: string) {
