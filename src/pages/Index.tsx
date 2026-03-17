@@ -1,7 +1,7 @@
 import { useFinance } from '@/contexts/FinanceContext';
 import { getBillStatus, STATUS_LABELS } from '@/types/finance';
 import { useNotifications } from '@/hooks/useNotifications';
-import { AlertTriangle, CheckCircle2, Clock, TrendingUp, Wallet, Landmark, Receipt, Sparkles } from 'lucide-react';
+import { AlertTriangle, CheckCircle2, Clock, TrendingUp, Wallet, Landmark, Receipt, Sparkles, HandCoins } from 'lucide-react';
 import { useMemo } from 'react';
 import { format, isThisMonth, differenceInDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -9,8 +9,8 @@ import { parseDateOnly } from '@/lib/date';
 import { getCategoryIcon, getCategoryColor } from '@/lib/category-icons';
 
 export default function Dashboard() {
-  const { bills, bankAccounts, transactions, categories } = useFinance();
-  useNotifications(bills);
+  const { bills, bankAccounts, transactions, categories, loans } = useFinance();
+  useNotifications(bills, loans);
 
   const stats = useMemo(() => {
     const today = new Date();
@@ -242,6 +242,35 @@ export default function Dashboard() {
           ))}
         </div>
       </div>
+
+      {/* Loans summary */}
+      {loans.filter(l => !l.paid).length > 0 && (
+        <div className="glass-card-hover p-5">
+          <div className="flex items-center gap-2 mb-4">
+            <div className="w-8 h-8 rounded-lg bg-status-overdue/15 flex items-center justify-center">
+              <HandCoins size={16} className="text-status-overdue" />
+            </div>
+            <h2 className="font-semibold">Empréstimos Pendentes</h2>
+            <span className="ml-auto text-lg font-bold mono text-status-overdue">
+              {formatCurrency(loans.filter(l => !l.paid).reduce((s, l) => s + l.amount, 0))}
+            </span>
+          </div>
+          <div className="space-y-2 stagger-fade">
+            {loans.filter(l => !l.paid).map(loan => (
+              <div key={loan.id} className="flex items-center justify-between py-2.5 px-3 rounded-lg status-overdue border text-sm">
+                <div className="flex items-center gap-2.5">
+                  <HandCoins size={14} />
+                  <div>
+                    <p className="font-medium">{loan.personName}</p>
+                    <p className="text-xs opacity-70">Desde {format(parseDateOnly(loan.loanDate), 'dd/MM/yyyy')}</p>
+                  </div>
+                </div>
+                <span className="font-semibold mono">{formatCurrency(loan.amount)}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

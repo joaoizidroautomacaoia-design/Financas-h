@@ -1,25 +1,21 @@
 import { useEffect, useRef } from 'react';
-import { Bill, getBillStatus } from '@/types/finance';
+import { Bill, Loan, getBillStatus } from '@/types/finance';
 
-export function useNotifications(bills: Bill[]) {
+export function useNotifications(bills: Bill[], loans: Loan[] = []) {
   const notifiedRef = useRef<Set<string>>(new Set());
 
   useEffect(() => {
     if (!('Notification' in window)) return;
     if (Notification.permission !== 'granted') return;
-    if (bills.length === 0) return;
 
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-
-    // Get today's date key to only notify once per day per bill
     const todayKey = today.toISOString().split('T')[0];
 
+    // Bill notifications
     bills.forEach(bill => {
       const status = getBillStatus(bill);
-      const notifKey = `${bill.id}-${todayKey}`;
-
-      // Skip already notified or paid bills
+      const notifKey = `bill-${bill.id}-${todayKey}`;
       if (notifiedRef.current.has(notifKey)) return;
       if (bill.paid) return;
 
@@ -32,30 +28,46 @@ export function useNotifications(bills: Bill[]) {
 
       if (message) {
         notifiedRef.current.add(notifKey);
-        try {
-          const notification = new Notification('FinControl - Alerta de Vencimento', {
-            body: message,
-            icon: '/pwa-192x192.png',
-            tag: notifKey,
-          });
-          notification.onclick = () => {
-            window.focus();
-            notification.close();
-          };
-        } catch {
-          // SW notification fallback
-          navigator.serviceWorker?.ready.then(reg => {
-            reg.showNotification('FinControl - Alerta de Vencimento', {
-              body: message,
-              icon: '/pwa-192x192.png',
-              badge: '/pwa-192x192.png',
-              tag: notifKey,
-            });
-          });
-        }
+        sendNotification('FinControl - Alerta de Vencimento', message, notifKey);
       }
     });
-  }, [bills]);
+
+    // Loan notifications - daily reminder for all unpaid loans
+    const unpaidLoans = loans.filter(l => !l.paid);
+    if (unpaidLoans.length > 0) {
+      const loanNotifKey = `loans-daily-${todayKey}`;
+      if (!notifiedRef.current.has(loanNotifKey)) {
+        notifiedRef.current.add(loanNotifKey);
+        const total = unpaidLoans.reduce((s, l) => s + l.amount, 0);
+        const names = unpaidLoans.map(l => l.personName).join(', ');
+        const message = `💰 Você tem ${unpaidLoans.length} empréstimo(s) pendente(s) totalizando R$ ${total.toFixed(2)}.\nDe: ${names}`;
+        sendNotification('FinControl - Empréstimos Pendentes', message, loanNotifKey);
+      }
+    }
+  }, [bills, loans]);
+}
+
+function sendNotification(title: string, body: string, tag: string) {
+  try {
+    const notification = new Notification(title, {
+      body,
+      icon: '/pwa-192x192.png',
+      tag,
+    });
+    notification.onclick = () => {
+      window.focus();
+      notification.close();
+    };
+  } catch {
+    navigator.serviceWorker?.ready.then(reg => {
+      reg.showNotification(title, {
+        body,
+        icon: '/pwa-192x192.png',
+        badge: '/pwa-192x192.png',
+        tag,
+      });
+    });
+  }
 }
 
 export async function requestNotificationPermission(): Promise<boolean> {

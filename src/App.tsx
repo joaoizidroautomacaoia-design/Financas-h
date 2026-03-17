@@ -13,6 +13,7 @@ import CalendarPage from "./pages/CalendarPage";
 import Reports from "./pages/Reports";
 import BankAccounts from "./pages/BankAccounts";
 import Transactions from "./pages/Transactions";
+import Loans from "./pages/Loans";
 import Settings from "./pages/Settings";
 import ActivityLog from "./pages/ActivityLog";
 import Auth from "./pages/Auth";
@@ -50,6 +51,7 @@ function ProtectedRoutes() {
             <Route path="/reports" element={<Reports />} />
             <Route path="/bank-accounts" element={<BankAccounts />} />
             <Route path="/transactions" element={<Transactions />} />
+            <Route path="/loans" element={<Loans />} />
             <Route path="/activity" element={<ActivityLog />} />
             <Route path="/settings" element={<Settings />} />
             <Route path="*" element={<NotFound />} />

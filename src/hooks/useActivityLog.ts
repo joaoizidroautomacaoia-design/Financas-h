@@ -4,7 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useWorkspace } from '@/contexts/WorkspaceContext';
 
 export type ActivityAction = 'create' | 'update' | 'delete' | 'paid';
-export type EntityType = 'bill' | 'bank_account' | 'deposit' | 'transaction' | 'category';
+export type EntityType = 'bill' | 'bank_account' | 'deposit' | 'transaction' | 'category' | 'loan';
 
 export interface ActivityEntry {
   id: string;
@@ -31,6 +31,7 @@ const ENTITY_LABELS: Record<EntityType, string> = {
   deposit: 'recebimento',
   transaction: 'transação',
   category: 'categoria',
+  loan: 'empréstimo',
 };
 
 export function getActionLabel(action: string) {

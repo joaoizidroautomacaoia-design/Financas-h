@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { Bill, BankAccount, Category, BankDeposit, Transaction } from '@/types/finance';
+import { Bill, BankAccount, Category, BankDeposit, Transaction, Loan } from '@/types/finance';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useWorkspace } from '@/contexts/WorkspaceContext';
@@ -13,6 +13,7 @@ interface FinanceContextType {
   categories: Category[];
   deposits: BankDeposit[];
   transactions: Transaction[];
+  loans: Loan[];
   loading: boolean;
   addBill: (bill: Omit<Bill, 'id'>) => void;
   updateBill: (bill: Bill) => void;
@@ -30,6 +31,10 @@ interface FinanceContextType {
   addTransaction: (t: Omit<Transaction, 'id'>) => void;
   updateTransaction: (t: Transaction) => void;
   deleteTransaction: (id: string) => void;
+  addLoan: (l: Omit<Loan, 'id'>) => void;
+  updateLoan: (l: Loan) => void;
+  deleteLoan: (id: string) => void;
+  markLoanAsPaid: (id: string) => void;
 }
 
 const FinanceContext = createContext<FinanceContextType | null>(null);
@@ -54,6 +59,7 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
   const [categories, setCategories] = useState<Category[]>([]);
   const [deposits, setDeposits] = useState<BankDeposit[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [loans, setLoans] = useState<Loan[]>([]);
   const [loading, setLoading] = useState(true);
 
   const effectiveUserId = activeWorkspace?.id || user?.id;
@@ -72,18 +78,20 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
   const fetchAll = async () => {
     setLoading(true);
     const uid = effectiveUserId!;
-    const [billsRes, accountsRes, categoriesRes, depositsRes, transactionsRes] = await Promise.all([
+    const [billsRes, accountsRes, categoriesRes, depositsRes, transactionsRes, loansRes] = await Promise.all([
       supabase.from('bills').select('*').eq('user_id', uid).order('due_date'),
       supabase.from('bank_accounts').select('*').eq('user_id', uid).order('created_at'),
       supabase.from('categories').select('*').eq('user_id', uid).order('created_at'),
       supabase.from('bank_deposits').select('*').eq('user_id', uid).order('deposit_date'),
       supabase.from('transactions').select('*').eq('user_id', uid).order('transaction_date', { ascending: false }),
+      supabase.from('loans').select('*').eq('user_id', uid).order('created_at', { ascending: false }),
     ]);
 
     if (billsRes.data) setBills(billsRes.data.map(mapBillFromDb));
     if (accountsRes.data) setBankAccounts(accountsRes.data.map(a => ({ id: a.id, name: a.name, balance: Number(a.balance) })));
     if (depositsRes.data) setDeposits(depositsRes.data.map(d => ({ id: d.id, bankAccountId: d.bank_account_id, amount: Number(d.amount), depositDate: d.deposit_date, description: d.description || '' })));
     if (transactionsRes.data) setTransactions(transactionsRes.data.map(t => ({ id: t.id, description: t.description, amount: Number(t.amount), category: t.category, transactionDate: t.transaction_date, notes: t.notes || '' })));
+    if (loansRes.data) setLoans(loansRes.data.map((l: any) => ({ id: l.id, personName: l.person_name, amount: Number(l.amount), loanDate: l.loan_date, notes: l.notes || '', paid: l.paid, paidDate: l.paid_date || undefined })));
     if (categoriesRes.data) {
       if (categoriesRes.data.length === 0) {
         await seedCategories();
@@ -312,8 +320,47 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
     log('delete', 'transaction', tx?.description || '', id);
   }, [transactions, log]);
 
+  const addLoan = useCallback(async (l: Omit<Loan, 'id'>) => {
+    if (!user) return;
+    const { data, error } = await supabase.from('loans').insert({
+      person_name: l.personName, amount: l.amount, loan_date: l.loanDate,
+      notes: l.notes, paid: l.paid, user_id: effectiveUserId!,
+    }).select().single();
+    if (error) { toast.error('Erro ao adicionar empréstimo'); return; }
+    if (data) {
+      setLoans(prev => [{ id: data.id, personName: (data as any).person_name, amount: Number(data.amount), loanDate: (data as any).loan_date, notes: data.notes || '', paid: data.paid, paidDate: (data as any).paid_date || undefined }, ...prev]);
+      log('create', 'loan', l.personName, data.id);
+    }
+  }, [user, log]);
+
+  const updateLoan = useCallback(async (l: Loan) => {
+    const { error } = await supabase.from('loans').update({
+      person_name: l.personName, amount: l.amount, loan_date: l.loanDate, notes: l.notes,
+    }).eq('id', l.id);
+    if (error) { toast.error('Erro ao atualizar empréstimo'); return; }
+    setLoans(prev => prev.map(x => x.id === l.id ? l : x));
+    log('update', 'loan', l.personName, l.id);
+  }, [log]);
+
+  const deleteLoan = useCallback(async (id: string) => {
+    const loan = loans.find(l => l.id === id);
+    const { error } = await supabase.from('loans').delete().eq('id', id);
+    if (error) { toast.error('Erro ao deletar empréstimo'); return; }
+    setLoans(prev => prev.filter(x => x.id !== id));
+    log('delete', 'loan', loan?.personName || '', id);
+  }, [loans, log]);
+
+  const markLoanAsPaid = useCallback(async (id: string) => {
+    const now = todayDateOnly();
+    const loan = loans.find(l => l.id === id);
+    const { error } = await supabase.from('loans').update({ paid: true, paid_date: now }).eq('id', id);
+    if (error) { toast.error('Erro ao marcar como pago'); return; }
+    setLoans(prev => prev.map(l => l.id === id ? { ...l, paid: true, paidDate: now } : l));
+    log('paid', 'loan', loan?.personName || '', id);
+  }, [loans, log]);
+
   return (
-    <FinanceContext.Provider value={{ bills, bankAccounts, categories, deposits, transactions, loading, addBill, updateBill, updateBillGroup, deleteBill, deleteBillGroup, markAsPaid, addBankAccount, updateBankAccount, deleteBankAccount, addCategory, deleteCategory, addDeposit, deleteDeposit, addTransaction, updateTransaction, deleteTransaction }}>
+    <FinanceContext.Provider value={{ bills, bankAccounts, categories, deposits, transactions, loans, loading, addBill, updateBill, updateBillGroup, deleteBill, deleteBillGroup, markAsPaid, addBankAccount, updateBankAccount, deleteBankAccount, addCategory, deleteCategory, addDeposit, deleteDeposit, addTransaction, updateTransaction, deleteTransaction, addLoan, updateLoan, deleteLoan, markLoanAsPaid }}>
       {children}
     </FinanceContext.Provider>
   );
