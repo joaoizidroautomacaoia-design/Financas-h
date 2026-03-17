@@ -12,6 +12,7 @@ const links = [
   { to: '/reports', label: 'Relatórios', icon: BarChart3 },
   { to: '/bank-accounts', label: 'Bancos', icon: Landmark },
   { to: '/transactions', label: 'Transações', icon: ArrowLeftRight },
+  { to: '/loans', label: 'Empréstimos', icon: HandCoins },
   { to: '/activity', label: 'Atividades', icon: History },
   { to: '/settings', label: 'Configurações', icon: Settings },
 ];
