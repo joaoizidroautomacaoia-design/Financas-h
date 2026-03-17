@@ -13,6 +13,7 @@ interface FinanceContextType {
   categories: Category[];
   deposits: BankDeposit[];
   transactions: Transaction[];
+  loans: Loan[];
   loading: boolean;
   addBill: (bill: Omit<Bill, 'id'>) => void;
   updateBill: (bill: Bill) => void;
@@ -30,6 +31,10 @@ interface FinanceContextType {
   addTransaction: (t: Omit<Transaction, 'id'>) => void;
   updateTransaction: (t: Transaction) => void;
   deleteTransaction: (id: string) => void;
+  addLoan: (l: Omit<Loan, 'id'>) => void;
+  updateLoan: (l: Loan) => void;
+  deleteLoan: (id: string) => void;
+  markLoanAsPaid: (id: string) => void;
 }
 
 const FinanceContext = createContext<FinanceContextType | null>(null);
