@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { Bill, BankAccount, Category, BankDeposit, Transaction } from '@/types/finance';
+import { Bill, BankAccount, Category, BankDeposit, Transaction, Loan } from '@/types/finance';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useWorkspace } from '@/contexts/WorkspaceContext';
