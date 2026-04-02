@@ -145,7 +145,51 @@ export default function BankAccountsPage() {
         </Button>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 stagger-fade">
+      {/* Summary cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="glass-card-hover p-4 text-center">
+          <p className="text-xs text-muted-foreground mb-1">Esperado total/mês</p>
+          <p className="text-xl font-bold mono">{formatCurrency(totalExpected)}</p>
+        </div>
+        <div className="glass-card-hover p-4 text-center">
+          <p className="text-xs text-muted-foreground mb-1">Recebido este mês</p>
+          <p className={`text-xl font-bold mono ${totalReceivedThisMonth >= totalExpected ? 'text-status-paid' : 'text-foreground'}`}>{formatCurrency(totalReceivedThisMonth)}</p>
+        </div>
+        <div className="glass-card-hover p-4 text-center">
+          <p className="text-xs text-muted-foreground mb-1">Diferença</p>
+          {(() => {
+            const diff = totalReceivedThisMonth - totalExpected;
+            return (
+              <p className={`text-xl font-bold mono ${diff >= 0 ? 'text-status-paid' : 'text-status-overdue'}`}>
+                {diff >= 0 ? '+' : ''}{formatCurrency(diff)}
+              </p>
+            );
+          })()}
+        </div>
+      </div>
+
+      {/* Monthly history */}
+      {monthlyHistory.length > 0 && (
+        <div className="glass-card-hover p-4">
+          <button
+            onClick={() => setShowHistory(!showHistory)}
+            className="flex items-center gap-2 text-sm font-medium hover:text-foreground transition-colors w-full"
+          >
+            {showHistory ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+            Histórico mensal de recebimentos
+          </button>
+          {showHistory && (
+            <div className="mt-3 space-y-2 border-t border-border pt-3">
+              {monthlyHistory.map(m => (
+                <div key={m.key} className="flex justify-between items-center text-sm py-1">
+                  <span className="capitalize text-muted-foreground">{m.label}</span>
+                  <span className="mono font-semibold text-status-paid">{formatCurrency(m.total)}</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
         {bankAccounts.map(a => {
           const acDeposits = depositsByAccount[a.id] || [];
           const received = receivedByAccount[a.id] || 0;
