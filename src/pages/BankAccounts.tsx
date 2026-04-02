@@ -324,6 +324,25 @@ export default function BankAccountsPage() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Budget form */}
+      <Dialog open={showBudgetForm} onOpenChange={setShowBudgetForm}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Reserva para Compras do Mês</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 mt-2">
+            <div>
+              <Label>Valor reservado</Label>
+              <Input type="number" value={budgetInput} onChange={e => setBudgetInput(e.target.value)} placeholder="Ex: 500" step="0.01" />
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setShowBudgetForm(false)}>Cancelar</Button>
+              <Button onClick={() => { setMonthlyBudget(parseFloat(budgetInput) || 0); setShowBudgetForm(false); }}>Salvar</Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
