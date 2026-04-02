@@ -101,6 +101,63 @@ export default function Dashboard() {
         </p>
       </div>
 
+      {/* Monthly budget for shopping */}
+      <div className="glass-card-hover p-5">
+        <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-lg bg-accent flex items-center justify-center">
+              <ShoppingCart size={16} className="text-primary" />
+            </div>
+            <div>
+              <h2 className="font-semibold text-sm">Reserva para Compras do Mês</h2>
+              {monthlyBudget > 0 && (
+                <p className="text-xs text-muted-foreground">
+                  Saldo após reserva: <span className={`font-semibold mono ${((() => {
+                    const totalReceived = deposits.filter(d => {
+                      const date = parseDateOnly(d.depositDate);
+                      return date.getMonth() === new Date().getMonth() && date.getFullYear() === new Date().getFullYear();
+                    }).reduce((s, d) => s + d.amount, 0);
+                    const totalPaid = bills.filter(b => b.paid).reduce((s, b) => s + b.amount, 0);
+                    return totalReceived - totalPaid - monthlyBudget;
+                  })()) >= 0 ? 'text-status-paid' : 'text-status-overdue'}`}>
+                    {formatCurrency((() => {
+                      const totalReceived = deposits.filter(d => {
+                        const date = parseDateOnly(d.depositDate);
+                        return date.getMonth() === new Date().getMonth() && date.getFullYear() === new Date().getFullYear();
+                      }).reduce((s, d) => s + d.amount, 0);
+                      const totalPaid = bills.filter(b => b.paid).reduce((s, b) => s + b.amount, 0);
+                      return totalReceived - totalPaid - monthlyBudget;
+                    })())}
+                  </span>
+                </p>
+              )}
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-xl font-bold mono">{formatCurrency(monthlyBudget)}</span>
+            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => { setBudgetInput(monthlyBudget > 0 ? monthlyBudget.toString() : ''); setShowBudgetDialog(true); }}>
+              <Pencil size={14} />
+            </Button>
+          </div>
+        </div>
+      </div>
+
+      {/* Budget dialog */}
+      <Dialog open={showBudgetDialog} onOpenChange={setShowBudgetDialog}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Definir Reserva para Compras</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 mt-2">
+            <Input type="number" value={budgetInput} onChange={e => setBudgetInput(e.target.value)} placeholder="Ex: 500" step="0.01" />
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setShowBudgetDialog(false)}>Cancelar</Button>
+              <Button onClick={() => { setMonthlyBudget(parseFloat(budgetInput) || 0); setShowBudgetDialog(false); }}>Salvar</Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       {/* Transactions summary with category icons */}
       <div className="glass-card-hover p-5">
         <div className="flex items-center justify-between mb-4">
