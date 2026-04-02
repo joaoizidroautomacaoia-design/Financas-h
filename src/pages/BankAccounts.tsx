@@ -110,6 +110,28 @@ export default function BankAccountsPage() {
   }, [deposits]);
 
   const totalBalance = bankAccounts.reduce((s, a) => s + (effectiveBalances[a.id] ?? a.balance), 0);
+  const totalExpected = bankAccounts.reduce((s, a) => s + a.balance, 0);
+  const totalReceivedThisMonth = Object.values(receivedByAccount).reduce((s, v) => s + v, 0);
+
+  // Monthly history of deposits across all accounts
+  const monthlyHistory = useMemo(() => {
+    const map: Record<string, number> = {};
+    deposits.forEach(d => {
+      const date = parseDateOnly(d.depositDate);
+      const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+      map[key] = (map[key] || 0) + d.amount;
+    });
+    return Object.entries(map)
+      .sort((a, b) => b[0].localeCompare(a[0]))
+      .map(([key, total]) => {
+        const [y, m] = key.split('-');
+        const date = new Date(parseInt(y), parseInt(m) - 1);
+        const label = date.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
+        return { key, label, total };
+      });
+  }, [deposits]);
+
+  const [showHistory, setShowHistory] = useState(false);
 
   return (
     <div className="space-y-6 animate-fade-in">
