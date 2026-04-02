@@ -223,12 +223,6 @@ export default function BankAccountsPage() {
                   <span className="text-xs text-muted-foreground">Recebido este mês</span>
                   <span className="text-lg font-bold mono text-status-paid">{formatCurrency(received)}</span>
                 </div>
-                <div className="flex justify-between items-baseline">
-                  <span className="text-xs text-muted-foreground">Saldo efetivo</span>
-                  <span className={`text-lg font-bold mono ${(effectiveBalances[a.id] ?? 0) >= 0 ? 'text-status-paid' : 'text-status-overdue'}`}>
-                    {formatCurrency(effectiveBalances[a.id] ?? a.balance)}
-                  </span>
-                </div>
                 {received > 0 && diff !== 0 && (
                   <p className={`text-xs font-medium ${diff < 0 ? 'text-status-overdue' : 'text-status-paid'}`}>
                     {diff < 0 ? `Faltam ${formatCurrency(Math.abs(diff))} para completar` : `${formatCurrency(diff)} a mais que o esperado`}
