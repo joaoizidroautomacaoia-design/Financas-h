@@ -84,15 +84,10 @@ export default function BankAccountsPage() {
     return map;
   }, [deposits]);
 
-  // Calculate effective balance: original balance minus paid bills
-  const effectiveBalances = useMemo(() => {
-    const map: Record<string, number> = {};
-    bankAccounts.forEach(a => {
-      const paidAmount = bills.filter(b => b.paid && b.bankAccountId === a.id).reduce((s, b) => s + b.amount, 0);
-      map[a.id] = a.balance - paidAmount;
-    });
-    return map;
-  }, [bankAccounts, bills]);
+  // Calculate total paid bills amount (regardless of bank account)
+  const totalPaidBills = useMemo(() => {
+    return bills.filter(b => b.paid).reduce((s, b) => s + b.amount, 0);
+  }, [bills]);
 
   // Total received per account in current month
   const receivedByAccount = useMemo(() => {
@@ -109,9 +104,9 @@ export default function BankAccountsPage() {
     return map;
   }, [deposits]);
 
-  const totalBalance = bankAccounts.reduce((s, a) => s + (effectiveBalances[a.id] ?? a.balance), 0);
   const totalExpected = bankAccounts.reduce((s, a) => s + a.balance, 0);
   const totalReceivedThisMonth = Object.values(receivedByAccount).reduce((s, v) => s + v, 0);
+  const totalBalance = totalReceivedThisMonth - totalPaidBills;
 
   // Monthly history of deposits across all accounts
   const monthlyHistory = useMemo(() => {
@@ -227,12 +222,6 @@ export default function BankAccountsPage() {
                 <div className="flex justify-between items-baseline">
                   <span className="text-xs text-muted-foreground">Recebido este mês</span>
                   <span className="text-lg font-bold mono text-status-paid">{formatCurrency(received)}</span>
-                </div>
-                <div className="flex justify-between items-baseline">
-                  <span className="text-xs text-muted-foreground">Saldo efetivo</span>
-                  <span className={`text-lg font-bold mono ${(effectiveBalances[a.id] ?? 0) >= 0 ? 'text-status-paid' : 'text-status-overdue'}`}>
-                    {formatCurrency(effectiveBalances[a.id] ?? a.balance)}
-                  </span>
                 </div>
                 {received > 0 && diff !== 0 && (
                   <p className={`text-xs font-medium ${diff < 0 ? 'text-status-overdue' : 'text-status-paid'}`}>
