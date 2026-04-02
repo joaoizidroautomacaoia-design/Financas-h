@@ -84,15 +84,10 @@ export default function BankAccountsPage() {
     return map;
   }, [deposits]);
 
-  // Calculate effective balance: original balance minus paid bills
-  const effectiveBalances = useMemo(() => {
-    const map: Record<string, number> = {};
-    bankAccounts.forEach(a => {
-      const paidAmount = bills.filter(b => b.paid && b.bankAccountId === a.id).reduce((s, b) => s + b.amount, 0);
-      map[a.id] = a.balance - paidAmount;
-    });
-    return map;
-  }, [bankAccounts, bills]);
+  // Calculate total paid bills amount (regardless of bank account)
+  const totalPaidBills = useMemo(() => {
+    return bills.filter(b => b.paid).reduce((s, b) => s + b.amount, 0);
+  }, [bills]);
 
   // Total received per account in current month
   const receivedByAccount = useMemo(() => {
