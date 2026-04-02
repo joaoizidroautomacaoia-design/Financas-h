@@ -104,9 +104,9 @@ export default function BankAccountsPage() {
     return map;
   }, [deposits]);
 
-  const totalBalance = totalReceivedThisMonth - totalPaidBills;
   const totalExpected = bankAccounts.reduce((s, a) => s + a.balance, 0);
   const totalReceivedThisMonth = Object.values(receivedByAccount).reduce((s, v) => s + v, 0);
+  const totalBalance = totalReceivedThisMonth - totalPaidBills;
 
   // Monthly history of deposits across all accounts
   const monthlyHistory = useMemo(() => {
