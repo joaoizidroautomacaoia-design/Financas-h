@@ -12,8 +12,10 @@ import { parseDateOnly } from '@/lib/date';
 import { getCategoryIcon, getCategoryColor } from '@/lib/category-icons';
 
 export default function Dashboard() {
-  const { bills, bankAccounts, transactions, categories, loans, loanPayments } = useFinance();
+  const { bills, bankAccounts, transactions, categories, loans, loanPayments, deposits, monthlyBudget, setMonthlyBudget } = useFinance();
   useNotifications(bills, loans, loanPayments);
+  const [showBudgetDialog, setShowBudgetDialog] = useState(false);
+  const [budgetInput, setBudgetInput] = useState('');
 
   const stats = useMemo(() => {
     const today = new Date();
