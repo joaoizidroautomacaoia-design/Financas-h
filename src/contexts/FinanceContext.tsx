@@ -15,6 +15,7 @@ interface FinanceContextType {
   transactions: Transaction[];
   loans: Loan[];
   loanPayments: LoanPayment[];
+  monthlyBudget: number;
   loading: boolean;
   addBill: (bill: Omit<Bill, 'id'>) => void;
   updateBill: (bill: Bill) => void;
@@ -38,6 +39,7 @@ interface FinanceContextType {
   markLoanAsPaid: (id: string) => void;
   addLoanPayment: (p: Omit<LoanPayment, 'id'>) => void;
   deleteLoanPayment: (id: string) => void;
+  setMonthlyBudget: (amount: number) => void;
 }
 
 const FinanceContext = createContext<FinanceContextType | null>(null);
