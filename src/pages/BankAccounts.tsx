@@ -146,7 +146,7 @@ export default function BankAccountsPage() {
       </div>
 
       {/* Summary cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="glass-card-hover p-4 text-center">
           <p className="text-xs text-muted-foreground mb-1">Esperado total/mês</p>
           <p className="text-xl font-bold mono">{formatCurrency(totalExpected)}</p>
@@ -156,15 +156,21 @@ export default function BankAccountsPage() {
           <p className={`text-xl font-bold mono ${totalReceivedThisMonth >= totalExpected ? 'text-status-paid' : 'text-foreground'}`}>{formatCurrency(totalReceivedThisMonth)}</p>
         </div>
         <div className="glass-card-hover p-4 text-center">
-          <p className="text-xs text-muted-foreground mb-1">Diferença</p>
-          {(() => {
-            const diff = totalReceivedThisMonth - totalExpected;
-            return (
-              <p className={`text-xl font-bold mono ${diff >= 0 ? 'text-status-paid' : 'text-status-overdue'}`}>
-                {diff >= 0 ? '+' : ''}{formatCurrency(diff)}
-              </p>
-            );
-          })()}
+          <p className="text-xs text-muted-foreground mb-1">Saldo (- contas pagas)</p>
+          <p className={`text-xl font-bold mono ${totalBalance >= 0 ? 'text-status-paid' : 'text-status-overdue'}`}>{formatCurrency(totalBalance)}</p>
+        </div>
+        <div className="glass-card-hover p-4 text-center cursor-pointer group" onClick={() => { setBudgetInput(monthlyBudget > 0 ? monthlyBudget.toString() : ''); setShowBudgetForm(true); }}>
+          <div className="flex items-center justify-center gap-1 mb-1">
+            <ShoppingCart size={12} className="text-primary" />
+            <p className="text-xs text-muted-foreground">Reserva Compras</p>
+            <Pencil size={10} className="text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+          </div>
+          <p className="text-xl font-bold mono">{formatCurrency(monthlyBudget)}</p>
+          {monthlyBudget > 0 && (
+            <p className={`text-xs font-medium mt-1 ${balanceAfterBudget >= 0 ? 'text-status-paid' : 'text-status-overdue'}`}>
+              Sobra: {formatCurrency(balanceAfterBudget)}
+            </p>
+          )}
         </div>
       </div>
 
