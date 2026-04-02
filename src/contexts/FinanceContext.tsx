@@ -15,6 +15,7 @@ interface FinanceContextType {
   transactions: Transaction[];
   loans: Loan[];
   loanPayments: LoanPayment[];
+  monthlyBudget: number;
   loading: boolean;
   addBill: (bill: Omit<Bill, 'id'>) => void;
   updateBill: (bill: Bill) => void;
@@ -38,6 +39,7 @@ interface FinanceContextType {
   markLoanAsPaid: (id: string) => void;
   addLoanPayment: (p: Omit<LoanPayment, 'id'>) => void;
   deleteLoanPayment: (id: string) => void;
+  setMonthlyBudget: (amount: number) => void;
 }
 
 const FinanceContext = createContext<FinanceContextType | null>(null);
@@ -64,6 +66,7 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loans, setLoans] = useState<Loan[]>([]);
   const [loanPayments, setLoanPayments] = useState<LoanPayment[]>([]);
+  const [monthlyBudget, setMonthlyBudgetState] = useState<number>(0);
   const [loading, setLoading] = useState(true);
 
   const effectiveUserId = activeWorkspace?.id || user?.id;
@@ -82,7 +85,10 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
   const fetchAll = async () => {
     setLoading(true);
     const uid = effectiveUserId!;
-    const [billsRes, accountsRes, categoriesRes, depositsRes, transactionsRes, loansRes, loanPaymentsRes] = await Promise.all([
+    const now = new Date();
+    const curMonth = now.getMonth() + 1;
+    const curYear = now.getFullYear();
+    const [billsRes, accountsRes, categoriesRes, depositsRes, transactionsRes, loansRes, loanPaymentsRes, budgetRes] = await Promise.all([
       supabase.from('bills').select('*').eq('user_id', uid).order('due_date'),
       supabase.from('bank_accounts').select('*').eq('user_id', uid).order('created_at'),
       supabase.from('categories').select('*').eq('user_id', uid).order('created_at'),
@@ -90,6 +96,7 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
       supabase.from('transactions').select('*').eq('user_id', uid).order('transaction_date', { ascending: false }),
       supabase.from('loans').select('*').eq('user_id', uid).order('created_at', { ascending: false }),
       supabase.from('loan_payments').select('*').eq('user_id', uid).order('payment_date', { ascending: false }),
+      supabase.from('monthly_budget' as any).select('*').eq('user_id', uid).eq('month', curMonth).eq('year', curYear).maybeSingle(),
     ]);
 
     if (billsRes.data) setBills(billsRes.data.map(mapBillFromDb));
@@ -105,8 +112,25 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
         setCategories(categoriesRes.data.map(c => ({ id: c.id, name: c.name, color: c.color })));
       }
     }
+    if (budgetRes.data) setMonthlyBudgetState(Number((budgetRes.data as any).amount) || 0);
+    else setMonthlyBudgetState(0);
     setLoading(false);
   };
+
+  const setMonthlyBudget = useCallback(async (amount: number) => {
+    if (!user || !effectiveUserId) return;
+    const now = new Date();
+    const month = now.getMonth() + 1;
+    const year = now.getFullYear();
+    const { data: existing } = await (supabase.from('monthly_budget' as any).select('id').eq('user_id', effectiveUserId).eq('month', month).eq('year', year).maybeSingle() as any);
+    if (existing) {
+      await (supabase.from('monthly_budget' as any) as any).update({ amount }).eq('id', existing.id);
+    } else {
+      await (supabase.from('monthly_budget' as any) as any).insert({ user_id: effectiveUserId, amount, month, year });
+    }
+    setMonthlyBudgetState(amount);
+    toast.success('Reserva para compras atualizada!');
+  }, [user, effectiveUserId]);
 
   const seedCategories = async () => {
     if (!user || !effectiveUserId) return;
@@ -387,7 +411,7 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   return (
-    <FinanceContext.Provider value={{ bills, bankAccounts, categories, deposits, transactions, loans, loanPayments, loading, addBill, updateBill, updateBillGroup, deleteBill, deleteBillGroup, markAsPaid, addBankAccount, updateBankAccount, deleteBankAccount, addCategory, deleteCategory, addDeposit, deleteDeposit, addTransaction, updateTransaction, deleteTransaction, addLoan, updateLoan, deleteLoan, markLoanAsPaid, addLoanPayment, deleteLoanPayment }}>
+    <FinanceContext.Provider value={{ bills, bankAccounts, categories, deposits, transactions, loans, loanPayments, monthlyBudget, loading, addBill, updateBill, updateBillGroup, deleteBill, deleteBillGroup, markAsPaid, addBankAccount, updateBankAccount, deleteBankAccount, addCategory, deleteCategory, addDeposit, deleteDeposit, addTransaction, updateTransaction, deleteTransaction, addLoan, updateLoan, deleteLoan, markLoanAsPaid, addLoanPayment, deleteLoanPayment, setMonthlyBudget }}>
       {children}
     </FinanceContext.Provider>
   );

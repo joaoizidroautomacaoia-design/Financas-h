@@ -5,11 +5,11 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Plus, Trash2, Pencil, Landmark, CalendarPlus, ChevronDown, ChevronUp } from 'lucide-react';
+import { Plus, Trash2, Pencil, Landmark, CalendarPlus, ChevronDown, ChevronUp, ShoppingCart } from 'lucide-react';
 import { toDateOnly, todayDateOnly, parseDateOnly } from '@/lib/date';
 
 export default function BankAccountsPage() {
-  const { bankAccounts, bills, deposits, addBankAccount, updateBankAccount, deleteBankAccount, addDeposit, deleteDeposit } = useFinance();
+  const { bankAccounts, bills, deposits, addBankAccount, updateBankAccount, deleteBankAccount, addDeposit, deleteDeposit, monthlyBudget, setMonthlyBudget } = useFinance();
   const [showForm, setShowForm] = useState(false);
   const [editAccount, setEditAccount] = useState<typeof bankAccounts[0] | null>(null);
   const [name, setName] = useState('');
@@ -107,6 +107,11 @@ export default function BankAccountsPage() {
   const totalExpected = bankAccounts.reduce((s, a) => s + a.balance, 0);
   const totalReceivedThisMonth = Object.values(receivedByAccount).reduce((s, v) => s + v, 0);
   const totalBalance = totalReceivedThisMonth - totalPaidBills;
+  const balanceAfterBudget = totalBalance - monthlyBudget;
+
+  // Budget form
+  const [showBudgetForm, setShowBudgetForm] = useState(false);
+  const [budgetInput, setBudgetInput] = useState('');
 
   // Monthly history of deposits across all accounts
   const monthlyHistory = useMemo(() => {
@@ -141,7 +146,7 @@ export default function BankAccountsPage() {
       </div>
 
       {/* Summary cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="glass-card-hover p-4 text-center">
           <p className="text-xs text-muted-foreground mb-1">Esperado total/mês</p>
           <p className="text-xl font-bold mono">{formatCurrency(totalExpected)}</p>
@@ -151,15 +156,21 @@ export default function BankAccountsPage() {
           <p className={`text-xl font-bold mono ${totalReceivedThisMonth >= totalExpected ? 'text-status-paid' : 'text-foreground'}`}>{formatCurrency(totalReceivedThisMonth)}</p>
         </div>
         <div className="glass-card-hover p-4 text-center">
-          <p className="text-xs text-muted-foreground mb-1">Diferença</p>
-          {(() => {
-            const diff = totalReceivedThisMonth - totalExpected;
-            return (
-              <p className={`text-xl font-bold mono ${diff >= 0 ? 'text-status-paid' : 'text-status-overdue'}`}>
-                {diff >= 0 ? '+' : ''}{formatCurrency(diff)}
-              </p>
-            );
-          })()}
+          <p className="text-xs text-muted-foreground mb-1">Saldo (- contas pagas)</p>
+          <p className={`text-xl font-bold mono ${totalBalance >= 0 ? 'text-status-paid' : 'text-status-overdue'}`}>{formatCurrency(totalBalance)}</p>
+        </div>
+        <div className="glass-card-hover p-4 text-center cursor-pointer group" onClick={() => { setBudgetInput(monthlyBudget > 0 ? monthlyBudget.toString() : ''); setShowBudgetForm(true); }}>
+          <div className="flex items-center justify-center gap-1 mb-1">
+            <ShoppingCart size={12} className="text-primary" />
+            <p className="text-xs text-muted-foreground">Reserva Compras</p>
+            <Pencil size={10} className="text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+          </div>
+          <p className="text-xl font-bold mono">{formatCurrency(monthlyBudget)}</p>
+          {monthlyBudget > 0 && (
+            <p className={`text-xs font-medium mt-1 ${balanceAfterBudget >= 0 ? 'text-status-paid' : 'text-status-overdue'}`}>
+              Sobra: {formatCurrency(balanceAfterBudget)}
+            </p>
+          )}
         </div>
       </div>
 
@@ -309,6 +320,25 @@ export default function BankAccountsPage() {
             <div className="flex justify-end gap-2">
               <Button variant="outline" onClick={() => setShowDepositForm(false)}>Cancelar</Button>
               <Button onClick={handleDeposit}>Registrar</Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Budget form */}
+      <Dialog open={showBudgetForm} onOpenChange={setShowBudgetForm}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Reserva para Compras do Mês</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 mt-2">
+            <div>
+              <Label>Valor reservado</Label>
+              <Input type="number" value={budgetInput} onChange={e => setBudgetInput(e.target.value)} placeholder="Ex: 500" step="0.01" />
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setShowBudgetForm(false)}>Cancelar</Button>
+              <Button onClick={() => { setMonthlyBudget(parseFloat(budgetInput) || 0); setShowBudgetForm(false); }}>Salvar</Button>
             </div>
           </div>
         </DialogContent>
