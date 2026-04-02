@@ -85,7 +85,10 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
   const fetchAll = async () => {
     setLoading(true);
     const uid = effectiveUserId!;
-    const [billsRes, accountsRes, categoriesRes, depositsRes, transactionsRes, loansRes, loanPaymentsRes] = await Promise.all([
+    const now = new Date();
+    const curMonth = now.getMonth() + 1;
+    const curYear = now.getFullYear();
+    const [billsRes, accountsRes, categoriesRes, depositsRes, transactionsRes, loansRes, loanPaymentsRes, budgetRes] = await Promise.all([
       supabase.from('bills').select('*').eq('user_id', uid).order('due_date'),
       supabase.from('bank_accounts').select('*').eq('user_id', uid).order('created_at'),
       supabase.from('categories').select('*').eq('user_id', uid).order('created_at'),
@@ -93,6 +96,7 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
       supabase.from('transactions').select('*').eq('user_id', uid).order('transaction_date', { ascending: false }),
       supabase.from('loans').select('*').eq('user_id', uid).order('created_at', { ascending: false }),
       supabase.from('loan_payments').select('*').eq('user_id', uid).order('payment_date', { ascending: false }),
+      supabase.from('monthly_budget' as any).select('*').eq('user_id', uid).eq('month', curMonth).eq('year', curYear).maybeSingle(),
     ]);
 
     if (billsRes.data) setBills(billsRes.data.map(mapBillFromDb));
