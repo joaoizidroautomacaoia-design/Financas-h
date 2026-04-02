@@ -9,7 +9,7 @@ import { Plus, Trash2, Pencil, Landmark, CalendarPlus, ChevronDown, ChevronUp, S
 import { toDateOnly, todayDateOnly, parseDateOnly } from '@/lib/date';
 
 export default function BankAccountsPage() {
-  const { bankAccounts, bills, deposits, addBankAccount, updateBankAccount, deleteBankAccount, addDeposit, deleteDeposit } = useFinance();
+  const { bankAccounts, bills, deposits, addBankAccount, updateBankAccount, deleteBankAccount, addDeposit, deleteDeposit, monthlyBudget, setMonthlyBudget } = useFinance();
   const [showForm, setShowForm] = useState(false);
   const [editAccount, setEditAccount] = useState<typeof bankAccounts[0] | null>(null);
   const [name, setName] = useState('');
