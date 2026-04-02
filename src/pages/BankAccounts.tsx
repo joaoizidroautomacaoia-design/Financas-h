@@ -104,7 +104,7 @@ export default function BankAccountsPage() {
     return map;
   }, [deposits]);
 
-  const totalBalance = bankAccounts.reduce((s, a) => s + (effectiveBalances[a.id] ?? a.balance), 0);
+  const totalBalance = totalReceivedThisMonth - totalPaidBills;
   const totalExpected = bankAccounts.reduce((s, a) => s + a.balance, 0);
   const totalReceivedThisMonth = Object.values(receivedByAccount).reduce((s, v) => s + v, 0);
 
