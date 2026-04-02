@@ -112,8 +112,25 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
         setCategories(categoriesRes.data.map(c => ({ id: c.id, name: c.name, color: c.color })));
       }
     }
+    if (budgetRes.data) setMonthlyBudgetState(Number((budgetRes.data as any).amount) || 0);
+    else setMonthlyBudgetState(0);
     setLoading(false);
   };
+
+  const setMonthlyBudget = useCallback(async (amount: number) => {
+    if (!user || !effectiveUserId) return;
+    const now = new Date();
+    const month = now.getMonth() + 1;
+    const year = now.getFullYear();
+    const { data: existing } = await (supabase.from('monthly_budget' as any).select('id').eq('user_id', effectiveUserId).eq('month', month).eq('year', year).maybeSingle() as any);
+    if (existing) {
+      await (supabase.from('monthly_budget' as any) as any).update({ amount }).eq('id', existing.id);
+    } else {
+      await (supabase.from('monthly_budget' as any) as any).insert({ user_id: effectiveUserId, amount, month, year });
+    }
+    setMonthlyBudgetState(amount);
+    toast.success('Reserva para compras atualizada!');
+  }, [user, effectiveUserId]);
 
   const seedCategories = async () => {
     if (!user || !effectiveUserId) return;
