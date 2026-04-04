@@ -16,6 +16,8 @@ export default function Dashboard() {
   useNotifications(bills, loans, loanPayments);
   const [showBudgetDialog, setShowBudgetDialog] = useState(false);
   const [budgetInput, setBudgetInput] = useState('');
+  const [showInvestmentDialog, setShowInvestmentDialog] = useState(false);
+  const [investmentInput, setInvestmentInput] = useState('');
 
   const stats = useMemo(() => {
     const today = new Date();
