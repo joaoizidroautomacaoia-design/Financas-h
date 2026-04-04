@@ -1,7 +1,7 @@
 import { useFinance } from '@/contexts/FinanceContext';
 import { getBillStatus, STATUS_LABELS } from '@/types/finance';
 import { useNotifications } from '@/hooks/useNotifications';
-import { AlertTriangle, CheckCircle2, Clock, TrendingUp, Wallet, Landmark, Receipt, Sparkles, HandCoins, ShoppingCart, Pencil } from 'lucide-react';
+import { AlertTriangle, CheckCircle2, Clock, TrendingUp, Wallet, Landmark, Receipt, Sparkles, HandCoins, ShoppingCart, Pencil, PiggyBank } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
