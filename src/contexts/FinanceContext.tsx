@@ -434,7 +434,7 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   return (
-    <FinanceContext.Provider value={{ bills, bankAccounts, categories, deposits, transactions, loans, loanPayments, monthlyBudget, loading, addBill, updateBill, updateBillGroup, deleteBill, deleteBillGroup, markAsPaid, addBankAccount, updateBankAccount, deleteBankAccount, addCategory, deleteCategory, addDeposit, deleteDeposit, addTransaction, updateTransaction, deleteTransaction, addLoan, updateLoan, deleteLoan, markLoanAsPaid, addLoanPayment, deleteLoanPayment, setMonthlyBudget }}>
+    <FinanceContext.Provider value={{ bills, bankAccounts, categories, deposits, transactions, loans, loanPayments, monthlyBudget, investmentBudget, loading, addBill, updateBill, updateBillGroup, deleteBill, deleteBillGroup, markAsPaid, addBankAccount, updateBankAccount, deleteBankAccount, addCategory, deleteCategory, addDeposit, deleteDeposit, addTransaction, updateTransaction, deleteTransaction, addLoan, updateLoan, deleteLoan, markLoanAsPaid, addLoanPayment, deleteLoanPayment, setMonthlyBudget, setInvestmentBudget }}>
       {children}
     </FinanceContext.Provider>
   );
