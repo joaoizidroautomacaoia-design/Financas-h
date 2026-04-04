@@ -115,8 +115,13 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
         setCategories(categoriesRes.data.map(c => ({ id: c.id, name: c.name, color: c.color })));
       }
     }
-    if (budgetRes.data) setMonthlyBudgetState(Number((budgetRes.data as any).amount) || 0);
-    else setMonthlyBudgetState(0);
+    if (budgetRes.data) {
+      setMonthlyBudgetState(Number((budgetRes.data as any).amount) || 0);
+      setInvestmentBudgetState(Number((budgetRes.data as any).investment_amount) || 0);
+    } else {
+      setMonthlyBudgetState(0);
+      setInvestmentBudgetState(0);
+    }
     setLoading(false);
   };
 
