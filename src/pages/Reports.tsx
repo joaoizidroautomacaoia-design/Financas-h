@@ -7,9 +7,54 @@ import { parseDateOnly } from '@/lib/date';
 
 const COLORS = ['hsl(160, 84%, 39%)', 'hsl(217, 91%, 60%)', 'hsl(38, 92%, 50%)', 'hsl(280, 65%, 60%)', 'hsl(0, 72%, 51%)', 'hsl(330, 80%, 60%)', 'hsl(200, 70%, 50%)', 'hsl(215, 20%, 55%)'];
 
+const DISTRIBUTION_COLORS = {
+  contas: 'hsl(0, 72%, 51%)',
+  compras: 'hsl(38, 92%, 50%)',
+  investimentos: 'hsl(217, 91%, 60%)',
+  sobra: 'hsl(160, 84%, 39%)',
+};
+
 export default function ReportsPage() {
-  const { bills } = useFinance();
+  const { bills, deposits, monthlyBudget, investmentBudget } = useFinance();
   const formatCurrency = (v: number) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+
+  const totalReceived = useMemo(() => {
+    const now = new Date();
+    const s = startOfMonth(now);
+    const e = endOfMonth(now);
+    return deposits
+      .filter(d => isWithinInterval(parseDateOnly(d.depositDate), { start: s, end: e }))
+      .reduce((sum, d) => sum + d.amount, 0);
+  }, [deposits]);
+
+  const totalBills = useMemo(() => {
+    return bills
+      .filter(b => isThisMonth(parseDateOnly(b.dueDate)))
+      .reduce((sum, b) => sum + b.amount, 0);
+  }, [bills]);
+
+  const distribution = useMemo(() => {
+    const sobra = Math.max(0, totalReceived - totalBills - monthlyBudget - investmentBudget);
+    return [
+      { name: 'Contas', value: totalBills },
+      { name: 'Compras do Mês', value: monthlyBudget },
+      { name: 'Investimentos', value: investmentBudget },
+      { name: 'Sobra', value: sobra },
+    ].filter(d => d.value > 0);
+  }, [totalReceived, totalBills, monthlyBudget, investmentBudget]);
+
+  const distributionBar = useMemo(() => {
+    const sobra = Math.max(0, totalReceived - totalBills - monthlyBudget - investmentBudget);
+    return [{
+      name: 'Distribuição',
+      Contas: totalBills,
+      'Compras do Mês': monthlyBudget,
+      Investimentos: investmentBudget,
+      Sobra: sobra,
+    }];
+  }, [totalReceived, totalBills, monthlyBudget, investmentBudget]);
+
+  const percentOf = (v: number) => totalReceived > 0 ? ((v / totalReceived) * 100).toFixed(1) + '%' : '0%';
 
   const byCategory = useMemo(() => {
     const thisMonth = bills.filter(b => isThisMonth(parseDateOnly(b.dueDate)));
@@ -69,9 +114,72 @@ export default function ReportsPage() {
     );
   };
 
+  const distColorMap: Record<string, string> = {
+    'Contas': DISTRIBUTION_COLORS.contas,
+    'Compras do Mês': DISTRIBUTION_COLORS.compras,
+    'Investimentos': DISTRIBUTION_COLORS.investimentos,
+    'Sobra': DISTRIBUTION_COLORS.sobra,
+  };
+
   return (
     <div className="space-y-6 animate-fade-in">
       <h1 className="text-2xl font-bold tracking-tight">Relatórios</h1>
+
+      {/* Distribution section */}
+      <div className="glass-card p-5">
+        <h3 className="font-semibold mb-2">Como Separar Seu Dinheiro</h3>
+        <p className="text-xs text-muted-foreground mb-4">
+          Baseado nos seus ganhos de {formatCurrency(totalReceived)} este mês
+        </p>
+        {totalReceived > 0 ? (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="flex flex-col items-center">
+              <ResponsiveContainer width="100%" height={250}>
+                <PieChart>
+                  <Pie data={distribution} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={90} innerRadius={50} paddingAngle={2}>
+                    {distribution.map((d) => <Cell key={d.name} fill={distColorMap[d.name]} />)}
+                  </Pie>
+                  <Tooltip content={<CustomTooltip />} />
+                </PieChart>
+              </ResponsiveContainer>
+              <div className="flex flex-wrap gap-3 mt-2">
+                {distribution.map((d) => (
+                  <div key={d.name} className="flex items-center gap-1.5 text-xs">
+                    <div className="w-2.5 h-2.5 rounded-full" style={{ background: distColorMap[d.name] }} />
+                    <span className="text-muted-foreground">{d.name}</span>
+                    <span className="mono font-medium">{percentOf(d.value)}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="space-y-3">
+              {[
+                { label: 'Contas', value: totalBills, color: DISTRIBUTION_COLORS.contas },
+                { label: 'Compras do Mês', value: monthlyBudget, color: DISTRIBUTION_COLORS.compras },
+                { label: 'Investimentos', value: investmentBudget, color: DISTRIBUTION_COLORS.investimentos },
+                { label: 'Sobra', value: Math.max(0, totalReceived - totalBills - monthlyBudget - investmentBudget), color: DISTRIBUTION_COLORS.sobra },
+              ].map(item => (
+                <div key={item.label} className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 rounded-full" style={{ background: item.color }} />
+                    <span className="text-sm font-medium">{item.label}</span>
+                  </div>
+                  <div className="text-right">
+                    <span className="mono text-sm font-semibold">{formatCurrency(item.value)}</span>
+                    <span className="text-xs text-muted-foreground ml-2">{percentOf(item.value)}</span>
+                  </div>
+                </div>
+              ))}
+              <div className="flex items-center justify-between p-3 rounded-lg border border-border bg-muted/30 mt-2">
+                <span className="text-sm font-semibold">Total Recebido</span>
+                <span className="mono text-sm font-bold">{formatCurrency(totalReceived)}</span>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <p className="text-sm text-muted-foreground">Registre depósitos para ver a distribuição sugerida.</p>
+        )}
+      </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="glass-card p-5">
