@@ -103,58 +103,93 @@ export default function Dashboard() {
         </p>
       </div>
 
-      {/* Monthly budget for shopping */}
-      <div className="glass-card-hover p-5">
-        <div className="flex items-center justify-between mb-2">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-accent flex items-center justify-center">
-              <ShoppingCart size={16} className="text-primary" />
+      {/* Monthly reserves */}
+      {(() => {
+        const totalReceived = deposits.filter(d => {
+          const date = parseDateOnly(d.depositDate);
+          return date.getMonth() === new Date().getMonth() && date.getFullYear() === new Date().getFullYear();
+        }).reduce((s, d) => s + d.amount, 0);
+        const totalPaid = bills.filter(b => b.paid).reduce((s, b) => s + b.amount, 0);
+        const totalPending = bills.filter(b => !b.paid).reduce((s, b) => s + b.amount, 0);
+        const afterBills = totalReceived - totalPaid - totalPending;
+        const afterAll = afterBills - monthlyBudget - investmentBudget;
+        return (
+          <div className="glass-card-hover p-5 space-y-4">
+            <div className="flex items-center gap-2 mb-1">
+              <div className="w-8 h-8 rounded-lg bg-accent flex items-center justify-center">
+                <Wallet size={16} className="text-primary" />
+              </div>
+              <h2 className="font-semibold">Planejamento do Mês</h2>
             </div>
-            <div>
-              <h2 className="font-semibold text-sm">Reserva para Compras do Mês</h2>
-              {monthlyBudget > 0 && (
-                <p className="text-xs text-muted-foreground">
-                  Saldo após reserva: <span className={`font-semibold mono ${((() => {
-                    const totalReceived = deposits.filter(d => {
-                      const date = parseDateOnly(d.depositDate);
-                      return date.getMonth() === new Date().getMonth() && date.getFullYear() === new Date().getFullYear();
-                    }).reduce((s, d) => s + d.amount, 0);
-                    const totalPaid = bills.filter(b => b.paid).reduce((s, b) => s + b.amount, 0);
-                    return totalReceived - totalPaid - monthlyBudget;
-                  })()) >= 0 ? 'text-status-paid' : 'text-status-overdue'}`}>
-                    {formatCurrency((() => {
-                      const totalReceived = deposits.filter(d => {
-                        const date = parseDateOnly(d.depositDate);
-                        return date.getMonth() === new Date().getMonth() && date.getFullYear() === new Date().getFullYear();
-                      }).reduce((s, d) => s + d.amount, 0);
-                      const totalPaid = bills.filter(b => b.paid).reduce((s, b) => s + b.amount, 0);
-                      return totalReceived - totalPaid - monthlyBudget;
-                    })())}
-                  </span>
-                </p>
-              )}
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {/* Shopping reserve */}
+              <div className="flex items-center justify-between p-3 rounded-xl bg-accent/50 border border-border/30">
+                <div className="flex items-center gap-2">
+                  <ShoppingCart size={16} className="text-primary" />
+                  <span className="text-sm font-medium">Compras do Mês</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <span className="font-semibold mono">{formatCurrency(monthlyBudget)}</span>
+                  <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => { setBudgetInput(monthlyBudget > 0 ? monthlyBudget.toString() : ''); setShowBudgetDialog(true); }}>
+                    <Pencil size={12} />
+                  </Button>
+                </div>
+              </div>
+              {/* Investment reserve */}
+              <div className="flex items-center justify-between p-3 rounded-xl bg-accent/50 border border-border/30">
+                <div className="flex items-center gap-2">
+                  <PiggyBank size={16} className="text-primary" />
+                  <span className="text-sm font-medium">Investimentos</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <span className="font-semibold mono">{formatCurrency(investmentBudget)}</span>
+                  <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => { setInvestmentInput(investmentBudget > 0 ? investmentBudget.toString() : ''); setShowInvestmentDialog(true); }}>
+                    <Pencil size={12} />
+                  </Button>
+                </div>
+              </div>
             </div>
+
+            {(monthlyBudget > 0 || investmentBudget > 0) && (
+              <div className="flex items-center justify-between pt-2 border-t border-border/30">
+                <span className="text-sm text-muted-foreground">Sobra após contas + reservas</span>
+                <span className={`text-lg font-bold mono ${afterAll >= 0 ? 'text-status-paid' : 'text-status-overdue'}`}>
+                  {formatCurrency(afterAll)}
+                </span>
+              </div>
+            )}
           </div>
-          <div className="flex items-center gap-2">
-            <span className="text-xl font-bold mono">{formatCurrency(monthlyBudget)}</span>
-            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => { setBudgetInput(monthlyBudget > 0 ? monthlyBudget.toString() : ''); setShowBudgetDialog(true); }}>
-              <Pencil size={14} />
-            </Button>
-          </div>
-        </div>
-      </div>
+        );
+      })()}
 
       {/* Budget dialog */}
       <Dialog open={showBudgetDialog} onOpenChange={setShowBudgetDialog}>
         <DialogContent className="max-w-sm">
           <DialogHeader>
-            <DialogTitle>Definir Reserva para Compras</DialogTitle>
+            <DialogTitle>Reserva para Compras</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 mt-2">
             <Input type="number" value={budgetInput} onChange={e => setBudgetInput(e.target.value)} placeholder="Ex: 500" step="0.01" />
             <div className="flex justify-end gap-2">
               <Button variant="outline" onClick={() => setShowBudgetDialog(false)}>Cancelar</Button>
               <Button onClick={() => { setMonthlyBudget(parseFloat(budgetInput) || 0); setShowBudgetDialog(false); }}>Salvar</Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Investment dialog */}
+      <Dialog open={showInvestmentDialog} onOpenChange={setShowInvestmentDialog}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Reserva para Investimentos</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 mt-2">
+            <Input type="number" value={investmentInput} onChange={e => setInvestmentInput(e.target.value)} placeholder="Ex: 300" step="0.01" />
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setShowInvestmentDialog(false)}>Cancelar</Button>
+              <Button onClick={() => { setInvestmentBudget(parseFloat(investmentInput) || 0); setShowInvestmentDialog(false); }}>Salvar</Button>
             </div>
           </div>
         </DialogContent>
