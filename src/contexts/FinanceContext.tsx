@@ -140,6 +140,21 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
     toast.success('Reserva para compras atualizada!');
   }, [user, effectiveUserId]);
 
+  const setInvestmentBudget = useCallback(async (amount: number) => {
+    if (!user || !effectiveUserId) return;
+    const now = new Date();
+    const month = now.getMonth() + 1;
+    const year = now.getFullYear();
+    const { data: existing } = await (supabase.from('monthly_budget' as any).select('id').eq('user_id', effectiveUserId).eq('month', month).eq('year', year).maybeSingle() as any);
+    if (existing) {
+      await (supabase.from('monthly_budget' as any) as any).update({ investment_amount: amount }).eq('id', existing.id);
+    } else {
+      await (supabase.from('monthly_budget' as any) as any).insert({ user_id: effectiveUserId, investment_amount: amount, month, year });
+    }
+    setInvestmentBudgetState(amount);
+    toast.success('Reserva para investimentos atualizada!');
+  }, [user, effectiveUserId]);
+
   const seedCategories = async () => {
     if (!user || !effectiveUserId) return;
     if (effectiveUserId !== user.id) return;
