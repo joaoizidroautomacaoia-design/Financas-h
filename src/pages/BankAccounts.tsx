@@ -107,11 +107,13 @@ export default function BankAccountsPage() {
   const totalExpected = bankAccounts.reduce((s, a) => s + a.balance, 0);
   const totalReceivedThisMonth = Object.values(receivedByAccount).reduce((s, v) => s + v, 0);
   const totalBalance = totalReceivedThisMonth - totalPaidBills;
-  const balanceAfterBudget = totalBalance - monthlyBudget;
+  const balanceAfterBudget = totalBalance - monthlyBudget - investmentBudget;
 
   // Budget form
   const [showBudgetForm, setShowBudgetForm] = useState(false);
   const [budgetInput, setBudgetInput] = useState('');
+  const [showInvestmentForm, setShowInvestmentForm] = useState(false);
+  const [investmentInput, setInvestmentInput] = useState('');
 
   // Monthly history of deposits across all accounts
   const monthlyHistory = useMemo(() => {
