@@ -1,0 +1,1 @@
+ALTER TABLE public.monthly_budget ADD COLUMN investment_amount NUMERIC NOT NULL DEFAULT 0;
