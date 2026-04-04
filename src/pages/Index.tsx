@@ -12,7 +12,7 @@ import { parseDateOnly } from '@/lib/date';
 import { getCategoryIcon, getCategoryColor } from '@/lib/category-icons';
 
 export default function Dashboard() {
-  const { bills, bankAccounts, transactions, categories, loans, loanPayments, deposits, monthlyBudget, setMonthlyBudget } = useFinance();
+  const { bills, bankAccounts, transactions, categories, loans, loanPayments, deposits, monthlyBudget, setMonthlyBudget, investmentBudget, setInvestmentBudget } = useFinance();
   useNotifications(bills, loans, loanPayments);
   const [showBudgetDialog, setShowBudgetDialog] = useState(false);
   const [budgetInput, setBudgetInput] = useState('');
