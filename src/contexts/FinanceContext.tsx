@@ -41,6 +41,7 @@ interface FinanceContextType {
   addLoanPayment: (p: Omit<LoanPayment, 'id'>) => void;
   deleteLoanPayment: (id: string) => void;
   setMonthlyBudget: (amount: number) => void;
+  setInvestmentBudget: (amount: number) => void;
 }
 
 const FinanceContext = createContext<FinanceContextType | null>(null);
