@@ -354,6 +354,25 @@ export default function BankAccountsPage() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Investment form */}
+      <Dialog open={showInvestmentForm} onOpenChange={setShowInvestmentForm}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Reserva para Investimentos</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 mt-2">
+            <div>
+              <Label>Valor reservado</Label>
+              <Input type="number" value={investmentInput} onChange={e => setInvestmentInput(e.target.value)} placeholder="Ex: 300" step="0.01" />
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setShowInvestmentForm(false)}>Cancelar</Button>
+              <Button onClick={() => { setInvestmentBudget(parseFloat(investmentInput) || 0); setShowInvestmentForm(false); }}>Salvar</Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
