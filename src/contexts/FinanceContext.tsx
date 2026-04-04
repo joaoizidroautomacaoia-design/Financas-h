@@ -16,6 +16,7 @@ interface FinanceContextType {
   loans: Loan[];
   loanPayments: LoanPayment[];
   monthlyBudget: number;
+  investmentBudget: number;
   loading: boolean;
   addBill: (bill: Omit<Bill, 'id'>) => void;
   updateBill: (bill: Bill) => void;
