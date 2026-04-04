@@ -16,6 +16,7 @@ interface FinanceContextType {
   loans: Loan[];
   loanPayments: LoanPayment[];
   monthlyBudget: number;
+  investmentBudget: number;
   loading: boolean;
   addBill: (bill: Omit<Bill, 'id'>) => void;
   updateBill: (bill: Bill) => void;
@@ -40,6 +41,7 @@ interface FinanceContextType {
   addLoanPayment: (p: Omit<LoanPayment, 'id'>) => void;
   deleteLoanPayment: (id: string) => void;
   setMonthlyBudget: (amount: number) => void;
+  setInvestmentBudget: (amount: number) => void;
 }
 
 const FinanceContext = createContext<FinanceContextType | null>(null);
@@ -67,6 +69,7 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
   const [loans, setLoans] = useState<Loan[]>([]);
   const [loanPayments, setLoanPayments] = useState<LoanPayment[]>([]);
   const [monthlyBudget, setMonthlyBudgetState] = useState<number>(0);
+  const [investmentBudget, setInvestmentBudgetState] = useState<number>(0);
   const [loading, setLoading] = useState(true);
 
   const effectiveUserId = activeWorkspace?.id || user?.id;
@@ -112,8 +115,13 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
         setCategories(categoriesRes.data.map(c => ({ id: c.id, name: c.name, color: c.color })));
       }
     }
-    if (budgetRes.data) setMonthlyBudgetState(Number((budgetRes.data as any).amount) || 0);
-    else setMonthlyBudgetState(0);
+    if (budgetRes.data) {
+      setMonthlyBudgetState(Number((budgetRes.data as any).amount) || 0);
+      setInvestmentBudgetState(Number((budgetRes.data as any).investment_amount) || 0);
+    } else {
+      setMonthlyBudgetState(0);
+      setInvestmentBudgetState(0);
+    }
     setLoading(false);
   };
 
@@ -130,6 +138,21 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
     }
     setMonthlyBudgetState(amount);
     toast.success('Reserva para compras atualizada!');
+  }, [user, effectiveUserId]);
+
+  const setInvestmentBudget = useCallback(async (amount: number) => {
+    if (!user || !effectiveUserId) return;
+    const now = new Date();
+    const month = now.getMonth() + 1;
+    const year = now.getFullYear();
+    const { data: existing } = await (supabase.from('monthly_budget' as any).select('id').eq('user_id', effectiveUserId).eq('month', month).eq('year', year).maybeSingle() as any);
+    if (existing) {
+      await (supabase.from('monthly_budget' as any) as any).update({ investment_amount: amount }).eq('id', existing.id);
+    } else {
+      await (supabase.from('monthly_budget' as any) as any).insert({ user_id: effectiveUserId, investment_amount: amount, month, year });
+    }
+    setInvestmentBudgetState(amount);
+    toast.success('Reserva para investimentos atualizada!');
   }, [user, effectiveUserId]);
 
   const seedCategories = async () => {
@@ -411,7 +434,7 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   return (
-    <FinanceContext.Provider value={{ bills, bankAccounts, categories, deposits, transactions, loans, loanPayments, monthlyBudget, loading, addBill, updateBill, updateBillGroup, deleteBill, deleteBillGroup, markAsPaid, addBankAccount, updateBankAccount, deleteBankAccount, addCategory, deleteCategory, addDeposit, deleteDeposit, addTransaction, updateTransaction, deleteTransaction, addLoan, updateLoan, deleteLoan, markLoanAsPaid, addLoanPayment, deleteLoanPayment, setMonthlyBudget }}>
+    <FinanceContext.Provider value={{ bills, bankAccounts, categories, deposits, transactions, loans, loanPayments, monthlyBudget, investmentBudget, loading, addBill, updateBill, updateBillGroup, deleteBill, deleteBillGroup, markAsPaid, addBankAccount, updateBankAccount, deleteBankAccount, addCategory, deleteCategory, addDeposit, deleteDeposit, addTransaction, updateTransaction, deleteTransaction, addLoan, updateLoan, deleteLoan, markLoanAsPaid, addLoanPayment, deleteLoanPayment, setMonthlyBudget, setInvestmentBudget }}>
       {children}
     </FinanceContext.Provider>
   );

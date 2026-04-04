@@ -328,6 +328,7 @@ export type Database = {
           amount: number
           created_at: string
           id: string
+          investment_amount: number
           month: number
           updated_at: string
           user_id: string
@@ -337,6 +338,7 @@ export type Database = {
           amount?: number
           created_at?: string
           id?: string
+          investment_amount?: number
           month: number
           updated_at?: string
           user_id: string
@@ -346,6 +348,7 @@ export type Database = {
           amount?: number
           created_at?: string
           id?: string
+          investment_amount?: number
           month?: number
           updated_at?: string
           user_id?: string

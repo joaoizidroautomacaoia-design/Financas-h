@@ -5,11 +5,11 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Plus, Trash2, Pencil, Landmark, CalendarPlus, ChevronDown, ChevronUp, ShoppingCart } from 'lucide-react';
+import { Plus, Trash2, Pencil, Landmark, CalendarPlus, ChevronDown, ChevronUp, ShoppingCart, PiggyBank } from 'lucide-react';
 import { toDateOnly, todayDateOnly, parseDateOnly } from '@/lib/date';
 
 export default function BankAccountsPage() {
-  const { bankAccounts, bills, deposits, addBankAccount, updateBankAccount, deleteBankAccount, addDeposit, deleteDeposit, monthlyBudget, setMonthlyBudget } = useFinance();
+  const { bankAccounts, bills, deposits, addBankAccount, updateBankAccount, deleteBankAccount, addDeposit, deleteDeposit, monthlyBudget, setMonthlyBudget, investmentBudget, setInvestmentBudget } = useFinance();
   const [showForm, setShowForm] = useState(false);
   const [editAccount, setEditAccount] = useState<typeof bankAccounts[0] | null>(null);
   const [name, setName] = useState('');
@@ -107,11 +107,13 @@ export default function BankAccountsPage() {
   const totalExpected = bankAccounts.reduce((s, a) => s + a.balance, 0);
   const totalReceivedThisMonth = Object.values(receivedByAccount).reduce((s, v) => s + v, 0);
   const totalBalance = totalReceivedThisMonth - totalPaidBills;
-  const balanceAfterBudget = totalBalance - monthlyBudget;
+  const balanceAfterBudget = totalBalance - monthlyBudget - investmentBudget;
 
   // Budget form
   const [showBudgetForm, setShowBudgetForm] = useState(false);
   const [budgetInput, setBudgetInput] = useState('');
+  const [showInvestmentForm, setShowInvestmentForm] = useState(false);
+  const [investmentInput, setInvestmentInput] = useState('');
 
   // Monthly history of deposits across all accounts
   const monthlyHistory = useMemo(() => {
@@ -146,7 +148,7 @@ export default function BankAccountsPage() {
       </div>
 
       {/* Summary cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
         <div className="glass-card-hover p-4 text-center">
           <p className="text-xs text-muted-foreground mb-1">Esperado total/mês</p>
           <p className="text-xl font-bold mono">{formatCurrency(totalExpected)}</p>
@@ -166,13 +168,22 @@ export default function BankAccountsPage() {
             <Pencil size={10} className="text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
           </div>
           <p className="text-xl font-bold mono">{formatCurrency(monthlyBudget)}</p>
-          {monthlyBudget > 0 && (
-            <p className={`text-xs font-medium mt-1 ${balanceAfterBudget >= 0 ? 'text-status-paid' : 'text-status-overdue'}`}>
-              Sobra: {formatCurrency(balanceAfterBudget)}
-            </p>
-          )}
+        </div>
+        <div className="glass-card-hover p-4 text-center cursor-pointer group" onClick={() => { setInvestmentInput(investmentBudget > 0 ? investmentBudget.toString() : ''); setShowInvestmentForm(true); }}>
+          <div className="flex items-center justify-center gap-1 mb-1">
+            <PiggyBank size={12} className="text-primary" />
+            <p className="text-xs text-muted-foreground">Reserva Investir</p>
+            <Pencil size={10} className="text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+          </div>
+          <p className="text-xl font-bold mono">{formatCurrency(investmentBudget)}</p>
         </div>
       </div>
+      {(monthlyBudget > 0 || investmentBudget > 0) && (
+        <div className="glass-card-hover p-4 text-center">
+          <p className="text-xs text-muted-foreground mb-1">Sobra (após reservas)</p>
+          <p className={`text-xl font-bold mono ${balanceAfterBudget >= 0 ? 'text-status-paid' : 'text-status-overdue'}`}>{formatCurrency(balanceAfterBudget)}</p>
+        </div>
+      )}
 
       {/* Monthly history */}
       {monthlyHistory.length > 0 && (
@@ -339,6 +350,25 @@ export default function BankAccountsPage() {
             <div className="flex justify-end gap-2">
               <Button variant="outline" onClick={() => setShowBudgetForm(false)}>Cancelar</Button>
               <Button onClick={() => { setMonthlyBudget(parseFloat(budgetInput) || 0); setShowBudgetForm(false); }}>Salvar</Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Investment form */}
+      <Dialog open={showInvestmentForm} onOpenChange={setShowInvestmentForm}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Reserva para Investimentos</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 mt-2">
+            <div>
+              <Label>Valor reservado</Label>
+              <Input type="number" value={investmentInput} onChange={e => setInvestmentInput(e.target.value)} placeholder="Ex: 300" step="0.01" />
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setShowInvestmentForm(false)}>Cancelar</Button>
+              <Button onClick={() => { setInvestmentBudget(parseFloat(investmentInput) || 0); setShowInvestmentForm(false); }}>Salvar</Button>
             </div>
           </div>
         </DialogContent>
