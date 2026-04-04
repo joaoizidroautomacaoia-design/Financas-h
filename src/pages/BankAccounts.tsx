@@ -148,7 +148,7 @@ export default function BankAccountsPage() {
       </div>
 
       {/* Summary cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
         <div className="glass-card-hover p-4 text-center">
           <p className="text-xs text-muted-foreground mb-1">Esperado total/mês</p>
           <p className="text-xl font-bold mono">{formatCurrency(totalExpected)}</p>
@@ -168,13 +168,22 @@ export default function BankAccountsPage() {
             <Pencil size={10} className="text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
           </div>
           <p className="text-xl font-bold mono">{formatCurrency(monthlyBudget)}</p>
-          {monthlyBudget > 0 && (
-            <p className={`text-xs font-medium mt-1 ${balanceAfterBudget >= 0 ? 'text-status-paid' : 'text-status-overdue'}`}>
-              Sobra: {formatCurrency(balanceAfterBudget)}
-            </p>
-          )}
+        </div>
+        <div className="glass-card-hover p-4 text-center cursor-pointer group" onClick={() => { setInvestmentInput(investmentBudget > 0 ? investmentBudget.toString() : ''); setShowInvestmentForm(true); }}>
+          <div className="flex items-center justify-center gap-1 mb-1">
+            <PiggyBank size={12} className="text-primary" />
+            <p className="text-xs text-muted-foreground">Reserva Investir</p>
+            <Pencil size={10} className="text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+          </div>
+          <p className="text-xl font-bold mono">{formatCurrency(investmentBudget)}</p>
         </div>
       </div>
+      {(monthlyBudget > 0 || investmentBudget > 0) && (
+        <div className="glass-card-hover p-4 text-center">
+          <p className="text-xs text-muted-foreground mb-1">Sobra (após reservas)</p>
+          <p className={`text-xl font-bold mono ${balanceAfterBudget >= 0 ? 'text-status-paid' : 'text-status-overdue'}`}>{formatCurrency(balanceAfterBudget)}</p>
+        </div>
+      )}
 
       {/* Monthly history */}
       {monthlyHistory.length > 0 && (
