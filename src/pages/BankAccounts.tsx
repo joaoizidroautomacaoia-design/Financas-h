@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Plus, Trash2, Pencil, Landmark, CalendarPlus, ChevronDown, ChevronUp, ShoppingCart } from 'lucide-react';
+import { Plus, Trash2, Pencil, Landmark, CalendarPlus, ChevronDown, ChevronUp, ShoppingCart, PiggyBank } from 'lucide-react';
 import { toDateOnly, todayDateOnly, parseDateOnly } from '@/lib/date';
 
 export default function BankAccountsPage() {
