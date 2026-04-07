@@ -185,6 +185,7 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
       currentInstallment: row.current_installment || undefined,
       paymentMethod: row.payment_method, bankAccountId: row.bank_account_id || undefined,
       type: row.type as Bill['type'], notes: row.notes || '', groupId: row.group_id || undefined,
+      receiveDateId: row.receive_date_id || undefined,
     };
   }
 
@@ -198,7 +199,7 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
       current_installment: bill.currentInstallment || null,
       payment_method: bill.paymentMethod, bank_account_id: bill.bankAccountId || null,
       type: bill.type, notes: bill.notes || '', user_id: effectiveUserId!,
-      group_id: bill.groupId || null,
+      group_id: bill.groupId || null, receive_date_id: bill.receiveDateId || null,
     };
   }
 
