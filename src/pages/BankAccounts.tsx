@@ -1,15 +1,15 @@
 import { useState, useMemo } from 'react';
 import { useFinance } from '@/contexts/FinanceContext';
-import { BankDeposit } from '@/types/finance';
+import { BankDeposit, ReceiveDate } from '@/types/finance';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Plus, Trash2, Pencil, Landmark, CalendarPlus, ChevronDown, ChevronUp, ShoppingCart, PiggyBank } from 'lucide-react';
+import { Plus, Trash2, Pencil, Landmark, CalendarPlus, ChevronDown, ChevronUp, ShoppingCart, PiggyBank, CalendarDays } from 'lucide-react';
 import { toDateOnly, todayDateOnly, parseDateOnly } from '@/lib/date';
 
 export default function BankAccountsPage() {
-  const { bankAccounts, bills, deposits, addBankAccount, updateBankAccount, deleteBankAccount, addDeposit, deleteDeposit, monthlyBudget, setMonthlyBudget, investmentBudget, setInvestmentBudget } = useFinance();
+  const { bankAccounts, bills, deposits, receiveDates, addBankAccount, updateBankAccount, deleteBankAccount, addDeposit, deleteDeposit, addReceiveDate, deleteReceiveDate, monthlyBudget, setMonthlyBudget, investmentBudget, setInvestmentBudget } = useFinance();
   const [showForm, setShowForm] = useState(false);
   const [editAccount, setEditAccount] = useState<typeof bankAccounts[0] | null>(null);
   const [name, setName] = useState('');
@@ -21,6 +21,13 @@ export default function BankAccountsPage() {
   const [depositAmount, setDepositAmount] = useState('');
   const [depositDate, setDepositDate] = useState(todayDateOnly());
   const [depositDesc, setDepositDesc] = useState('');
+
+  // Receive date form
+  const [showReceiveDateForm, setShowReceiveDateForm] = useState(false);
+  const [rdAccountId, setRdAccountId] = useState('');
+  const [rdDay, setRdDay] = useState('');
+  const [rdAmount, setRdAmount] = useState('');
+  const [rdLabel, setRdLabel] = useState('');
 
   // Expanded card
   const [expandedId, setExpandedId] = useState<string | null>(null);
@@ -74,6 +81,46 @@ export default function BankAccountsPage() {
     setShowDepositForm(false);
   };
 
+  const openReceiveDateForm = (accountId: string) => {
+    setRdAccountId(accountId);
+    setRdDay('');
+    setRdAmount('');
+    setRdLabel('');
+    setShowReceiveDateForm(true);
+  };
+
+  const handleAddReceiveDate = () => {
+    const day = parseInt(rdDay);
+    if (!day || day < 1 || day > 31 || !rdAmount) return;
+    addReceiveDate({
+      bankAccountId: rdAccountId,
+      dayOfMonth: day,
+      expectedAmount: parseFloat(rdAmount),
+      label: rdLabel,
+    });
+    setShowReceiveDateForm(false);
+  };
+
+  // Receive dates grouped by account
+  const rdByAccount = useMemo(() => {
+    const map: Record<string, ReceiveDate[]> = {};
+    receiveDates.forEach(rd => {
+      if (!map[rd.bankAccountId]) map[rd.bankAccountId] = [];
+      map[rd.bankAccountId].push(rd);
+    });
+    return map;
+  }, [receiveDates]);
+
+  // Expected per account = sum of receive dates expected amounts (fallback to balance)
+  const expectedByAccount = useMemo(() => {
+    const map: Record<string, number> = {};
+    bankAccounts.forEach(a => {
+      const rds = rdByAccount[a.id] || [];
+      map[a.id] = rds.length > 0 ? rds.reduce((s, r) => s + r.expectedAmount, 0) : a.balance;
+    });
+    return map;
+  }, [bankAccounts, rdByAccount]);
+
   // Deposits grouped by account
   const depositsByAccount = useMemo(() => {
     const map: Record<string, BankDeposit[]> = {};
@@ -84,7 +131,7 @@ export default function BankAccountsPage() {
     return map;
   }, [deposits]);
 
-  // Calculate total paid bills amount (regardless of bank account)
+  // Calculate total paid bills amount
   const totalPaidBills = useMemo(() => {
     return bills.filter(b => b.paid).reduce((s, b) => s + b.amount, 0);
   }, [bills]);
@@ -104,7 +151,7 @@ export default function BankAccountsPage() {
     return map;
   }, [deposits]);
 
-  const totalExpected = bankAccounts.reduce((s, a) => s + a.balance, 0);
+  const totalExpected = Object.values(expectedByAccount).reduce((s, v) => s + v, 0);
   const totalReceivedThisMonth = Object.values(receivedByAccount).reduce((s, v) => s + v, 0);
   const totalBalance = totalReceivedThisMonth - totalPaidBills;
   const balanceAfterBudget = totalBalance - monthlyBudget - investmentBudget;
@@ -210,8 +257,10 @@ export default function BankAccountsPage() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 stagger-fade">
         {bankAccounts.map(a => {
           const acDeposits = depositsByAccount[a.id] || [];
+          const acReceiveDates = rdByAccount[a.id] || [];
+          const expected = expectedByAccount[a.id] || 0;
           const received = receivedByAccount[a.id] || 0;
-          const diff = received - a.balance;
+          const diff = received - expected;
           const isExpanded = expandedId === a.id;
 
           return (
@@ -223,10 +272,13 @@ export default function BankAccountsPage() {
                   </div>
                   <div>
                     <p className="font-semibold">{a.name}</p>
-                    <p className="text-xs text-muted-foreground">Esperado: {formatCurrency(a.balance)}/mês</p>
+                    <p className="text-xs text-muted-foreground">Esperado: {formatCurrency(expected)}/mês</p>
                   </div>
                 </div>
                 <div className="flex gap-1">
+                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openReceiveDateForm(a.id)} title="Adicionar data de recebimento">
+                    <CalendarDays size={14} />
+                  </Button>
                   <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openDepositForm(a.id)} title="Registrar recebimento">
                     <CalendarPlus size={14} />
                   </Button>
@@ -238,6 +290,28 @@ export default function BankAccountsPage() {
                   </Button>
                 </div>
               </div>
+
+              {/* Receive dates */}
+              {acReceiveDates.length > 0 && (
+                <div className="mt-3 space-y-1">
+                  <p className="text-xs font-medium text-muted-foreground">Datas de recebimento:</p>
+                  {acReceiveDates.sort((a, b) => a.dayOfMonth - b.dayOfMonth).map(rd => (
+                    <div key={rd.id} className="flex items-center justify-between text-sm py-0.5">
+                      <div className="flex items-center gap-2">
+                        <CalendarDays size={12} className="text-primary" />
+                        <span>Dia {rd.dayOfMonth}</span>
+                        {rd.label && <span className="text-muted-foreground">- {rd.label}</span>}
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="mono font-medium">{formatCurrency(rd.expectedAmount)}</span>
+                        <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive" onClick={() => deleteReceiveDate(rd.id)}>
+                          <Trash2 size={10} />
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
 
               {/* Balances summary */}
               <div className="mt-4 space-y-1">
@@ -298,8 +372,9 @@ export default function BankAccountsPage() {
               <Input value={name} onChange={e => setName(e.target.value)} placeholder="Ex: Nubank" />
             </div>
             <div>
-              <Label>Valor esperado por mês</Label>
+              <Label>Valor esperado por mês (fallback)</Label>
               <Input type="number" value={balance} onChange={e => setBalance(e.target.value)} placeholder="0,00" step="0.01" />
+              <p className="text-xs text-muted-foreground mt-1">Usado apenas se nenhuma data de recebimento for cadastrada</p>
             </div>
             <div className="flex justify-end gap-2">
               <Button variant="outline" onClick={() => setShowForm(false)}>Cancelar</Button>
@@ -331,6 +406,33 @@ export default function BankAccountsPage() {
             <div className="flex justify-end gap-2">
               <Button variant="outline" onClick={() => setShowDepositForm(false)}>Cancelar</Button>
               <Button onClick={handleDeposit}>Registrar</Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Receive date form */}
+      <Dialog open={showReceiveDateForm} onOpenChange={setShowReceiveDateForm}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Nova Data de Recebimento</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 mt-2">
+            <div>
+              <Label>Dia do mês *</Label>
+              <Input type="number" min={1} max={31} value={rdDay} onChange={e => setRdDay(e.target.value)} placeholder="Ex: 5" />
+            </div>
+            <div>
+              <Label>Valor esperado *</Label>
+              <Input type="number" value={rdAmount} onChange={e => setRdAmount(e.target.value)} placeholder="0,00" step="0.01" />
+            </div>
+            <div>
+              <Label>Descrição</Label>
+              <Input value={rdLabel} onChange={e => setRdLabel(e.target.value)} placeholder="Ex: Salário, Freelance..." />
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setShowReceiveDateForm(false)}>Cancelar</Button>
+              <Button onClick={handleAddReceiveDate}>Adicionar</Button>
             </div>
           </div>
         </DialogContent>
