@@ -19,7 +19,7 @@ interface Props {
 }
 
 export default function BillFormDialog({ open, onOpenChange, bill, editMode = 'single' }: Props) {
-  const { addBill, updateBill, updateBillGroup, categories, bankAccounts } = useFinance();
+  const { addBill, updateBill, updateBillGroup, categories, bankAccounts, receiveDates } = useFinance();
   const isEdit = !!bill;
   const isGroupEdit = isEdit && editMode === 'group';
 
@@ -36,6 +36,7 @@ export default function BillFormDialog({ open, onOpenChange, bill, editMode = 's
   const [paymentMethod, setPaymentMethod] = useState('');
   const [bankAccountId, setBankAccountId] = useState('');
   const [notes, setNotes] = useState('');
+  const [receiveDateId, setReceiveDateId] = useState('');
 
   useEffect(() => {
     if (bill) {
@@ -52,10 +53,12 @@ export default function BillFormDialog({ open, onOpenChange, bill, editMode = 's
       setPaymentMethod(bill.paymentMethod);
       setBankAccountId(bill.bankAccountId || '');
       setNotes(bill.notes || '');
+      setReceiveDateId(bill.receiveDateId || '');
     } else {
       setName(''); setCategory(''); setAmount(''); setDueDate(''); setType('variable');
       setRecurring(false); setFrequency('monthly'); setInstallment(false);
       setInstallmentCount(''); setCurrentInstallment('1'); setPaymentMethod(''); setBankAccountId(''); setNotes('');
+      setReceiveDateId('');
     }
   }, [bill, open]);
 
@@ -68,7 +71,7 @@ export default function BillFormDialog({ open, onOpenChange, bill, editMode = 's
       installment, installmentCount: installment ? parseInt(installmentCount) : undefined,
       currentInstallment: installment ? parseInt(currentInstallment) : undefined,
       paymentMethod, bankAccountId: bankAccountId || undefined, notes,
-      groupId: bill?.groupId,
+      groupId: bill?.groupId, receiveDateId: receiveDateId || undefined,
     };
     if (isEdit) {
       if (isGroupEdit) {
