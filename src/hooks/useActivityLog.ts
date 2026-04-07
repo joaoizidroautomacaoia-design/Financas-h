@@ -4,7 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useWorkspace } from '@/contexts/WorkspaceContext';
 
 export type ActivityAction = 'create' | 'update' | 'delete' | 'paid';
-export type EntityType = 'bill' | 'bank_account' | 'deposit' | 'transaction' | 'category' | 'loan';
+export type EntityType = 'bill' | 'bank_account' | 'deposit' | 'transaction' | 'category' | 'loan' | 'receive_date';
 
 export interface ActivityEntry {
   id: string;
