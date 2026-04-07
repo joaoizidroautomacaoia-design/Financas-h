@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { Bill, BankAccount, Category, BankDeposit, Transaction, Loan, LoanPayment } from '@/types/finance';
+import { Bill, BankAccount, Category, BankDeposit, Transaction, Loan, LoanPayment, ReceiveDate } from '@/types/finance';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useWorkspace } from '@/contexts/WorkspaceContext';
@@ -15,6 +15,7 @@ interface FinanceContextType {
   transactions: Transaction[];
   loans: Loan[];
   loanPayments: LoanPayment[];
+  receiveDates: ReceiveDate[];
   monthlyBudget: number;
   investmentBudget: number;
   loading: boolean;
@@ -42,6 +43,8 @@ interface FinanceContextType {
   deleteLoanPayment: (id: string) => void;
   setMonthlyBudget: (amount: number) => void;
   setInvestmentBudget: (amount: number) => void;
+  addReceiveDate: (rd: Omit<ReceiveDate, 'id'>) => void;
+  deleteReceiveDate: (id: string) => void;
 }
 
 const FinanceContext = createContext<FinanceContextType | null>(null);
