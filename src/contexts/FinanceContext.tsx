@@ -442,8 +442,29 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
     setLoanPayments(prev => prev.filter(x => x.id !== id));
   }, []);
 
+  const addReceiveDate = useCallback(async (rd: Omit<ReceiveDate, 'id'>) => {
+    if (!user) return;
+    const { data, error } = await (supabase.from('receive_dates' as any) as any).insert({
+      bank_account_id: rd.bankAccountId, day_of_month: rd.dayOfMonth,
+      expected_amount: rd.expectedAmount, label: rd.label, user_id: effectiveUserId!,
+    }).select().single();
+    if (error) { toast.error('Erro ao adicionar data de recebimento'); return; }
+    if (data) {
+      setReceiveDates(prev => [...prev, { id: data.id, bankAccountId: data.bank_account_id, dayOfMonth: data.day_of_month, expectedAmount: Number(data.expected_amount), label: data.label || '' }]);
+      log('create', 'receive_date', rd.label || `Dia ${rd.dayOfMonth}`, data.id);
+    }
+  }, [user, log]);
+
+  const deleteReceiveDate = useCallback(async (id: string) => {
+    const rd = receiveDates.find(r => r.id === id);
+    const { error } = await (supabase.from('receive_dates' as any) as any).delete().eq('id', id);
+    if (error) { toast.error('Erro ao deletar data de recebimento'); return; }
+    setReceiveDates(prev => prev.filter(x => x.id !== id));
+    log('delete', 'receive_date', rd?.label || '', id);
+  }, [receiveDates, log]);
+
   return (
-    <FinanceContext.Provider value={{ bills, bankAccounts, categories, deposits, transactions, loans, loanPayments, monthlyBudget, investmentBudget, loading, addBill, updateBill, updateBillGroup, deleteBill, deleteBillGroup, markAsPaid, addBankAccount, updateBankAccount, deleteBankAccount, addCategory, deleteCategory, addDeposit, deleteDeposit, addTransaction, updateTransaction, deleteTransaction, addLoan, updateLoan, deleteLoan, markLoanAsPaid, addLoanPayment, deleteLoanPayment, setMonthlyBudget, setInvestmentBudget }}>
+    <FinanceContext.Provider value={{ bills, bankAccounts, categories, deposits, transactions, loans, loanPayments, receiveDates, monthlyBudget, investmentBudget, loading, addBill, updateBill, updateBillGroup, deleteBill, deleteBillGroup, markAsPaid, addBankAccount, updateBankAccount, deleteBankAccount, addCategory, deleteCategory, addDeposit, deleteDeposit, addTransaction, updateTransaction, deleteTransaction, addLoan, updateLoan, deleteLoan, markLoanAsPaid, addLoanPayment, deleteLoanPayment, setMonthlyBudget, setInvestmentBudget, addReceiveDate, deleteReceiveDate }}>
       {children}
     </FinanceContext.Provider>
   );
