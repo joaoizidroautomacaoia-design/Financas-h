@@ -188,6 +188,31 @@ export default function BillFormDialog({ open, onOpenChange, bill, editMode = 's
             </div>
           </div>
 
+          {/* Receive date linking */}
+          {(() => {
+            const availableRDs = receiveDates.filter(rd => !bankAccountId || rd.bankAccountId === bankAccountId);
+            if (availableRDs.length === 0) return null;
+            return (
+              <div>
+                <Label>Pagar com recebimento do dia</Label>
+                <Select value={receiveDateId} onValueChange={setReceiveDateId}>
+                  <SelectTrigger><SelectValue placeholder="Nenhum (não vinculado)" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">Nenhum</SelectItem>
+                    {availableRDs.map(rd => {
+                      const account = bankAccounts.find(a => a.id === rd.bankAccountId);
+                      return (
+                        <SelectItem key={rd.id} value={rd.id}>
+                          Dia {rd.dayOfMonth} - {account?.name || ''} {rd.label ? `(${rd.label})` : ''}
+                        </SelectItem>
+                      );
+                    })}
+                  </SelectContent>
+                </Select>
+              </div>
+            );
+          })()}
+
           {!isGroupEdit && (
             <div>
               <Label>Observações</Label>
