@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { Bill, BankAccount, Category, BankDeposit, Transaction, Loan, LoanPayment } from '@/types/finance';
+import { Bill, BankAccount, Category, BankDeposit, Transaction, Loan, LoanPayment, ReceiveDate } from '@/types/finance';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useWorkspace } from '@/contexts/WorkspaceContext';
@@ -15,6 +15,7 @@ interface FinanceContextType {
   transactions: Transaction[];
   loans: Loan[];
   loanPayments: LoanPayment[];
+  receiveDates: ReceiveDate[];
   monthlyBudget: number;
   investmentBudget: number;
   loading: boolean;
@@ -42,6 +43,8 @@ interface FinanceContextType {
   deleteLoanPayment: (id: string) => void;
   setMonthlyBudget: (amount: number) => void;
   setInvestmentBudget: (amount: number) => void;
+  addReceiveDate: (rd: Omit<ReceiveDate, 'id'>) => void;
+  deleteReceiveDate: (id: string) => void;
 }
 
 const FinanceContext = createContext<FinanceContextType | null>(null);
@@ -68,6 +71,7 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loans, setLoans] = useState<Loan[]>([]);
   const [loanPayments, setLoanPayments] = useState<LoanPayment[]>([]);
+  const [receiveDates, setReceiveDates] = useState<ReceiveDate[]>([]);
   const [monthlyBudget, setMonthlyBudgetState] = useState<number>(0);
   const [investmentBudget, setInvestmentBudgetState] = useState<number>(0);
   const [loading, setLoading] = useState(true);
@@ -91,7 +95,7 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
     const now = new Date();
     const curMonth = now.getMonth() + 1;
     const curYear = now.getFullYear();
-    const [billsRes, accountsRes, categoriesRes, depositsRes, transactionsRes, loansRes, loanPaymentsRes, budgetRes] = await Promise.all([
+    const [billsRes, accountsRes, categoriesRes, depositsRes, transactionsRes, loansRes, loanPaymentsRes, budgetRes, receiveDatesRes] = await Promise.all([
       supabase.from('bills').select('*').eq('user_id', uid).order('due_date'),
       supabase.from('bank_accounts').select('*').eq('user_id', uid).order('created_at'),
       supabase.from('categories').select('*').eq('user_id', uid).order('created_at'),
@@ -100,6 +104,7 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
       supabase.from('loans').select('*').eq('user_id', uid).order('created_at', { ascending: false }),
       supabase.from('loan_payments').select('*').eq('user_id', uid).order('payment_date', { ascending: false }),
       supabase.from('monthly_budget' as any).select('*').eq('user_id', uid).eq('month', curMonth).eq('year', curYear).maybeSingle(),
+      supabase.from('receive_dates' as any).select('*').eq('user_id', uid).order('day_of_month'),
     ]);
 
     if (billsRes.data) setBills(billsRes.data.map(mapBillFromDb));
@@ -121,6 +126,9 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
     } else {
       setMonthlyBudgetState(0);
       setInvestmentBudgetState(0);
+    }
+    if ((receiveDatesRes as any).data) {
+      setReceiveDates((receiveDatesRes as any).data.map((r: any) => ({ id: r.id, bankAccountId: r.bank_account_id, dayOfMonth: r.day_of_month, expectedAmount: Number(r.expected_amount), label: r.label || '' })));
     }
     setLoading(false);
   };
@@ -177,6 +185,7 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
       currentInstallment: row.current_installment || undefined,
       paymentMethod: row.payment_method, bankAccountId: row.bank_account_id || undefined,
       type: row.type as Bill['type'], notes: row.notes || '', groupId: row.group_id || undefined,
+      receiveDateId: row.receive_date_id || undefined,
     };
   }
 
@@ -190,7 +199,7 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
       current_installment: bill.currentInstallment || null,
       payment_method: bill.paymentMethod, bank_account_id: bill.bankAccountId || null,
       type: bill.type, notes: bill.notes || '', user_id: effectiveUserId!,
-      group_id: bill.groupId || null,
+      group_id: bill.groupId || null, receive_date_id: bill.receiveDateId || null,
     };
   }
 
@@ -433,8 +442,29 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
     setLoanPayments(prev => prev.filter(x => x.id !== id));
   }, []);
 
+  const addReceiveDate = useCallback(async (rd: Omit<ReceiveDate, 'id'>) => {
+    if (!user) return;
+    const { data, error } = await (supabase.from('receive_dates' as any) as any).insert({
+      bank_account_id: rd.bankAccountId, day_of_month: rd.dayOfMonth,
+      expected_amount: rd.expectedAmount, label: rd.label, user_id: effectiveUserId!,
+    }).select().single();
+    if (error) { toast.error('Erro ao adicionar data de recebimento'); return; }
+    if (data) {
+      setReceiveDates(prev => [...prev, { id: data.id, bankAccountId: data.bank_account_id, dayOfMonth: data.day_of_month, expectedAmount: Number(data.expected_amount), label: data.label || '' }]);
+      log('create', 'receive_date', rd.label || `Dia ${rd.dayOfMonth}`, data.id);
+    }
+  }, [user, log]);
+
+  const deleteReceiveDate = useCallback(async (id: string) => {
+    const rd = receiveDates.find(r => r.id === id);
+    const { error } = await (supabase.from('receive_dates' as any) as any).delete().eq('id', id);
+    if (error) { toast.error('Erro ao deletar data de recebimento'); return; }
+    setReceiveDates(prev => prev.filter(x => x.id !== id));
+    log('delete', 'receive_date', rd?.label || '', id);
+  }, [receiveDates, log]);
+
   return (
-    <FinanceContext.Provider value={{ bills, bankAccounts, categories, deposits, transactions, loans, loanPayments, monthlyBudget, investmentBudget, loading, addBill, updateBill, updateBillGroup, deleteBill, deleteBillGroup, markAsPaid, addBankAccount, updateBankAccount, deleteBankAccount, addCategory, deleteCategory, addDeposit, deleteDeposit, addTransaction, updateTransaction, deleteTransaction, addLoan, updateLoan, deleteLoan, markLoanAsPaid, addLoanPayment, deleteLoanPayment, setMonthlyBudget, setInvestmentBudget }}>
+    <FinanceContext.Provider value={{ bills, bankAccounts, categories, deposits, transactions, loans, loanPayments, receiveDates, monthlyBudget, investmentBudget, loading, addBill, updateBill, updateBillGroup, deleteBill, deleteBillGroup, markAsPaid, addBankAccount, updateBankAccount, deleteBankAccount, addCategory, deleteCategory, addDeposit, deleteDeposit, addTransaction, updateTransaction, deleteTransaction, addLoan, updateLoan, deleteLoan, markLoanAsPaid, addLoanPayment, deleteLoanPayment, setMonthlyBudget, setInvestmentBudget, addReceiveDate, deleteReceiveDate }}>
       {children}
     </FinanceContext.Provider>
   );

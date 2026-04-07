@@ -139,6 +139,7 @@ export type Database = {
           paid: boolean
           paid_date: string | null
           payment_method: string
+          receive_date_id: string | null
           recurring: boolean
           type: string
           updated_at: string
@@ -161,6 +162,7 @@ export type Database = {
           paid?: boolean
           paid_date?: string | null
           payment_method?: string
+          receive_date_id?: string | null
           recurring?: boolean
           type?: string
           updated_at?: string
@@ -183,6 +185,7 @@ export type Database = {
           paid?: boolean
           paid_date?: string | null
           payment_method?: string
+          receive_date_id?: string | null
           recurring?: boolean
           type?: string
           updated_at?: string
@@ -194,6 +197,13 @@ export type Database = {
             columns: ["bank_account_id"]
             isOneToOne: false
             referencedRelation: "bank_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bills_receive_date_id_fkey"
+            columns: ["receive_date_id"]
+            isOneToOne: false
+            referencedRelation: "receive_dates"
             referencedColumns: ["id"]
           },
         ]
@@ -382,6 +392,44 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      receive_dates: {
+        Row: {
+          bank_account_id: string
+          created_at: string
+          day_of_month: number
+          expected_amount: number
+          id: string
+          label: string | null
+          user_id: string
+        }
+        Insert: {
+          bank_account_id: string
+          created_at?: string
+          day_of_month: number
+          expected_amount?: number
+          id?: string
+          label?: string | null
+          user_id: string
+        }
+        Update: {
+          bank_account_id?: string
+          created_at?: string
+          day_of_month?: number
+          expected_amount?: number
+          id?: string
+          label?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "receive_dates_bank_account_id_fkey"
+            columns: ["bank_account_id"]
+            isOneToOne: false
+            referencedRelation: "bank_accounts"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       transactions: {
         Row: {

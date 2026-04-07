@@ -19,7 +19,7 @@ interface Props {
 }
 
 export default function BillFormDialog({ open, onOpenChange, bill, editMode = 'single' }: Props) {
-  const { addBill, updateBill, updateBillGroup, categories, bankAccounts } = useFinance();
+  const { addBill, updateBill, updateBillGroup, categories, bankAccounts, receiveDates } = useFinance();
   const isEdit = !!bill;
   const isGroupEdit = isEdit && editMode === 'group';
 
@@ -36,6 +36,7 @@ export default function BillFormDialog({ open, onOpenChange, bill, editMode = 's
   const [paymentMethod, setPaymentMethod] = useState('');
   const [bankAccountId, setBankAccountId] = useState('');
   const [notes, setNotes] = useState('');
+  const [receiveDateId, setReceiveDateId] = useState('');
 
   useEffect(() => {
     if (bill) {
@@ -52,10 +53,12 @@ export default function BillFormDialog({ open, onOpenChange, bill, editMode = 's
       setPaymentMethod(bill.paymentMethod);
       setBankAccountId(bill.bankAccountId || '');
       setNotes(bill.notes || '');
+      setReceiveDateId(bill.receiveDateId || '');
     } else {
       setName(''); setCategory(''); setAmount(''); setDueDate(''); setType('variable');
       setRecurring(false); setFrequency('monthly'); setInstallment(false);
       setInstallmentCount(''); setCurrentInstallment('1'); setPaymentMethod(''); setBankAccountId(''); setNotes('');
+      setReceiveDateId('');
     }
   }, [bill, open]);
 
@@ -68,7 +71,7 @@ export default function BillFormDialog({ open, onOpenChange, bill, editMode = 's
       installment, installmentCount: installment ? parseInt(installmentCount) : undefined,
       currentInstallment: installment ? parseInt(currentInstallment) : undefined,
       paymentMethod, bankAccountId: bankAccountId || undefined, notes,
-      groupId: bill?.groupId,
+      groupId: bill?.groupId, receiveDateId: (receiveDateId && receiveDateId !== 'none') ? receiveDateId : undefined,
     };
     if (isEdit) {
       if (isGroupEdit) {
@@ -184,6 +187,31 @@ export default function BillFormDialog({ open, onOpenChange, bill, editMode = 's
               </Select>
             </div>
           </div>
+
+          {/* Receive date linking */}
+          {(() => {
+            const availableRDs = receiveDates.filter(rd => !bankAccountId || rd.bankAccountId === bankAccountId);
+            if (availableRDs.length === 0) return null;
+            return (
+              <div>
+                <Label>Pagar com recebimento do dia</Label>
+                <Select value={receiveDateId} onValueChange={setReceiveDateId}>
+                  <SelectTrigger><SelectValue placeholder="Nenhum (não vinculado)" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">Nenhum</SelectItem>
+                    {availableRDs.map(rd => {
+                      const account = bankAccounts.find(a => a.id === rd.bankAccountId);
+                      return (
+                        <SelectItem key={rd.id} value={rd.id}>
+                          Dia {rd.dayOfMonth} - {account?.name || ''} {rd.label ? `(${rd.label})` : ''}
+                        </SelectItem>
+                      );
+                    })}
+                  </SelectContent>
+                </Select>
+              </div>
+            );
+          })()}
 
           {!isGroupEdit && (
             <div>
