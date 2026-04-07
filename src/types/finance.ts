@@ -22,6 +22,7 @@ export interface Bill {
   type: BillType;
   notes?: string;
   groupId?: string;
+  receiveDateId?: string;
 }
 
 export interface BankAccount {
@@ -51,6 +52,14 @@ export interface Transaction {
   category: string;
   transactionDate: string;
   notes: string;
+}
+
+export interface ReceiveDate {
+  id: string;
+  bankAccountId: string;
+  dayOfMonth: number;
+  expectedAmount: number;
+  label: string;
 }
 
 export interface Loan {
