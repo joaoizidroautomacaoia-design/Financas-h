@@ -71,7 +71,7 @@ export default function BillFormDialog({ open, onOpenChange, bill, editMode = 's
       installment, installmentCount: installment ? parseInt(installmentCount) : undefined,
       currentInstallment: installment ? parseInt(currentInstallment) : undefined,
       paymentMethod, bankAccountId: bankAccountId || undefined, notes,
-      groupId: bill?.groupId, receiveDateId: receiveDateId || undefined,
+      groupId: bill?.groupId, receiveDateId: (receiveDateId && receiveDateId !== 'none') ? receiveDateId : undefined,
     };
     if (isEdit) {
       if (isGroupEdit) {
